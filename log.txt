@@ -1,7 +1,0 @@
-echo "Host entered"
-Host entered
-echo -IC:/MinGW/WiringPi/wiringPi/wiringPi -IC:/MinGW/ -IC:/MinGW/Einclude/ -I../include -IC:/MinGW/Einclude/x86_64-linux-gnu/ -IC:\MinGW\Einclude\x86_64-linux-gnu\gnu -I/../Einclude/  
--IC:/MinGW/WiringPi/wiringPi/wiringPi -IC:/MinGW/ -IC:/MinGW/Einclude/ -I../include -IC:/MinGW/Einclude/x86_64-linux-gnu/ -IC:\MinGW\Einclude\x86_64-linux-gnu\gnu -I/../Einclude/
-echo test2
-test2
-gcc -g  -DHOST -lwiringpi -LC:/MinGW/lib  -IC:/MinGW/WiringPi/wiringPi/wiringPi -IC:/MinGW/ -IC:/MinGW/Einclude/ -I../include -IC:/MinGW/Einclude/x86_64-linux-gnu/ -IC:\MinGW\Einclude\x86_64-linux-gnu\gnu -I/../Einclude/   -o Josefin Main.c KeyboardBut.c OneWireHandlerHA7S.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c  -lpthread 

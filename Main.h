@@ -173,8 +173,9 @@ struct ProcState_s {
   float         WaterLevel;
   float         ADDieselLevel;
   float         DieselLevel;
+	char					DevLCDDefined;
   float         UpdateInterval;
-		char										LCDBlkOnTimer; // Time in minutes until backligt is turned off
+	char					LCDBlkOnTimer; // Time in minutes until backligt is turned off
   struct fd_s {  // Filedescriptors
     int           lcd;
     int           timo;

@@ -30,6 +30,7 @@ char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
 char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
+char						ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
 char						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex);
 int 						A2HexByte(char A1, char A2);
 int 						ToHex(char ch);
@@ -119,13 +120,15 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
 
             case DEV_DS2450:  // AD-sensor
            /*   READ_TIMER(TM1);  */
-							if (!(ReadAD(AD, fp, DevType, OneWireList[Id].Path, ScrPad))) { // If not present then..
+								if (!(ReadADALL(AD, fp, DevType, OneWireList[Id].Path, ScrPad))) { //Test 
+							//	if (!(ReadAD(AD, fp, DevType, OneWireList[Id].Path, ScrPad))) { // If not present then..
                	OneWireList[Id].Present = FALSE; 
                 for (Idx = 0; Idx < 4; Idx++)
                   AD[Idx] = SENS_DEF_VAL;  // Set default value == indicate error
 
 								sprintf(InfoText, "Read AD : %d %s Status : %s \n", Id, OneWireList[Id].Path, (OneWireList[Id].Present) ? "OK" : "ERROR");
 								LOG_MSG(InfoText);
+
 							}  
            /*   READ_TIMER(TM2);  */
 							DELTA_TIME(DeltaTime, TM2, TM1);
@@ -279,6 +282,7 @@ char 						Scan4Sensors(void) {
         sprintf(InfoText, "Fnd[%d] %s:%s\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path);
         LOG_MSG(InfoText);
 				if (DEV_LCD == OneWireList[Id].DevType) {  // Initiate all 1W LCDs
+				  ProcState.DevLCDDefined = TRUE;
 	        Set1WLCDOn(OneWireList[Id].Id);   // Turn Display ON
 	        Set1WLCDBlkOn(OneWireList[Id].Id); // Turn backlight ON
 					sprintf(InfoText, "%s initiated\r\n", OneWireList[Id].SensName);
@@ -291,6 +295,57 @@ char 						Scan4Sensors(void) {
     }
   } // End for
 }
+char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
+  int 						idx;
+	char   					ADReadIdx;
+  char						Status;
+  unsigned int 		lastcrc16;
+  unsigned char		ScrPad[24]; 					
+  char	        	Address[200], line[200];
+  float						templong; 
+	
+  // Set default values
+	Status = FALSE;
+	ADReadIdx = 3;  // Set number of re-tries at AD read out
+  for (idx = 0; idx < 4; idx++)
+    AD[idx] = SENS_DEF_VAL;
+  sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+	#define ConvLevelAD   5   // Chose between 2.55 and 5.10. Change reading accordingly (volt.A or volt2.A )
+
+	// read Channel A
+	if((fp = fopen(Address, "r")) == NULL)  {
+		sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, SensorPath);
+		CHECK(FALSE, InfoText);
+		// fclose(fp); Don't close, fp == NULL!!
+		return Status;
+	} else {
+		while (ADReadIdx > 0) {
+			if (fgets(line, 200, fp) != NULL) { // Read 1:th line of info from device, if ok continue
+				ADReadIdx = 0; // Break while loop
+				Status = TRUE;
+			} else	{			
+				usleep(500);  // Wait and try again	
+				sprintf(InfoText, "Read AD again %x %s \n", fp, SensorPath);
+   			LOG_MSG(InfoText);
+				ADReadIdx--;
+			}
+		}	// End while
+		if (!Status) { // ERROR: Not able to read AD...
+			fclose(fp);
+			sprintf(InfoText, "Read error %x %s %s\n", fp, SensorPath, line);
+			LOG_MSG(InfoText);
+		} else {  // Everything just fine...continue
+			//	sprintf(InfoText, "Read AD-All %s\n", line);
+			//	LOG_MSG(InfoText);
+			fclose(fp);	
+			AD[0] = ConvLevelAD * atof(&line[3]);
+			//printf("%s :AD0 %10.6f \r\n", line, AD[0]);	
+		} 
+	}
+	return Status;
+}
+	
+	
 
 char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
   int 						idx;
@@ -320,7 +375,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 	} else {
 		if (fgets(line, 80, fp) == NULL) {// Read 1:th line of info from device
 			fclose(fp);
-			sprintf(InfoText, "Read error %x %s \n", fp, SensorPath);
+			sprintf(InfoText, "Read error %x %s %s\n", fp, SensorPath, line);
 			LOG_MSG(InfoText);
 		} else {
 			fclose(fp);	

@@ -117,7 +117,7 @@ int    main(int argc, char *argv[]) {
   ProcState.MaxWaterTemp   = SENS_DEF_VAL;
   ProcState.WaterTemp      = SENS_DEF_VAL;
   ProcState.WaterLevel     = SENS_DEF_VAL;
-	 ProcState.HWTemp         = SENS_DEF_VAL;
+	ProcState.HWTemp         = SENS_DEF_VAL;
   ProcState.DieselLevel    = SENS_DEF_VAL;
   ProcState.BatVoltS       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
   ProcState.BatVoltF       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
@@ -130,6 +130,7 @@ int    main(int argc, char *argv[]) {
   ProcState.fd.sens        = 0;
   ProcState.fd.kbdBut      = 0;
   ProcState.fd.kbdKnob     = 0;
+	ProcState.DevLCDDefined = FALSE;
   ProcState.UpdateInterval = 12;   // Timeout intervall for data & display update  
 	ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
 
@@ -712,11 +713,12 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
   }  // End of switch  
 
 #ifdef OWLCD_PRESENT
-LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
-LCD1W_WRITE(LCD1, 2, &LCDText[Line2]);
-LCD1W_WRITE(LCD1, 3, &LCDText[Line3]);
-LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);
-	
+if (PState->DevLCDDefined) {
+	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
+	LCD1W_WRITE(LCD1, 2, &LCDText[Line2]);
+	LCD1W_WRITE(LCD1, 3, &LCDText[Line3]);
+	LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);
+}
 #endif 
  
 #ifdef LCD_PRESENT
