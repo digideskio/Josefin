@@ -14,8 +14,14 @@
 #define DEV_DS2450         	0x20		// AD sensor
 #define DEV_DS1822         	0x22    // Temperature sensor, old model
 #define DEV_DS18B20					0x28    // Temperature sensor
+#define DEV_LCD							0xFF    // LCD module
 
 #define OWFS_MP							"/mnt/1wire/"   // Mount point for OWFS filesystem
+
+// Definitions for 1W LCD
+#define LCD1								8
+#define LCD2								9
+#define LCD1W_WRITE(a,b, c)		LCD1W_Write(a,b,c);   // a=LCD Id, b=Line, c=Text msg max 20 char
 
 /*#define LCD_ON						1    		// LCD-1W
 #define LCD_OFF							2    		// LCD-1W
@@ -96,7 +102,8 @@ struct ExpOneWireList_s {
       {7, "T-Vtn ", 0x28,  "80000000f6ebcd28"}, // Inne  
 
 			{8, "LCD-1 ", 0xFF,  "420001000007EBFF"},// Inne LCD-1 HA7S format
-			{8, "LCD-1 ", 0xFF,  "FF.EB0700000100"}  // Inne LCD-1 OWFS format
+        		{8, "LCD-1 ", 0xFF,  "FF.EB0700000100"}, // Inne LCD-1 OWFS format			  	
+                        {9, "LCD-2 ", 0xFF,  "FF.750800000100"}  // Inne LCD-2 OWFS format
 
     };
 		

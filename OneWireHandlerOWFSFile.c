@@ -25,6 +25,8 @@
 #include "OneWireHandlerOWFSFile.h"
 
 // Declaration of prototypes
+char 	          Init1WLCD(int LCD_Id);
+char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
 char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
@@ -69,9 +71,13 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
     OneWireList[Idx].Val[3]  = -99; //SENS_DEF_VALUE;  // Set default value
 
 	}
-	printf("1");
+
+
   Scan4Sensors();
-		printf("2");
+//	if (OneWireList[8].Present)  // Init 1W LCD if present
+//	  Init1WLCD(8);
+		
+
   OPEN_PIPE(fd_own,    ONEWIRE_PIPE, O_RDONLY|O_NONBLOCK);
   OPEN_PIPE(fd_2own,   ONEWIRE_PIPE, O_WRONLY);
   OPEN_PIPE(fd_2main,  MAIN_PIPE,    O_WRONLY);
@@ -161,24 +167,90 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
 	  } // switch
   } // while (TRUE)
 }
+char 						Init1WLCD(int LCD_Id) {
+  int           fp;
+	char					Addr[100];
 
+	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/LCDon"); 
+  OPEN_PIPE(fp, Addr,	O_WRONLY|O_NONBLOCK);
+	write(fp, "1", 1); // Turn LCD On
+	if (errno != 0)
+		printf("Write	error LCDon: %s %d\r\n", strerror(errno), errno);
+	close(fp);
+	usleep(50000); // We need a delay before next command to LCD
+
+	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
+  OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
+	write(fp, "1", 1); // Turn backlight On
+	if (errno != 0)
+		printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
+	usleep(5000);
+	close(fp);
+
+}
+char 						LCD1W_Write(int LCD_Id, int Line, char *Msg) {
+  int             fp, Id;
+	char						Addr[100];
+
+	if (!OneWireList[LCD_Id].Present) {
+		sprintf(InfoText, "Err LCD%d Not initiated\r\n", LCD_Id);
+		LOG_MSG(InfoText);
+	}	else {
+		errno = 0;	
+		switch(Line) {
+			case 1: 
+				sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path, "/line20.0");	
+				OPEN_PIPE(fp, Addr, 	O_WRONLY|O_NONBLOCK);
+				write(fp, Msg, 20);
+				close(fp);
+			break;
+			case 2:  
+				sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path, "/line20.1");		
+				OPEN_PIPE(fp, Addr, 	O_WRONLY|O_NONBLOCK);
+				write(fp, Msg, 20);
+				close(fp);
+			break;
+			case 3: 
+				sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path, "/line20.2");		
+				OPEN_PIPE(fp, Addr, 	O_WRONLY|O_NONBLOCK);
+				write(fp, Msg, 20);
+				close(fp);
+			break;
+			case 4: 	
+				sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path, "/line20.3");		
+				OPEN_PIPE(fp, Addr, 	O_WRONLY|O_NONBLOCK);
+				write(fp, Msg, 20);
+				close(fp);
+			break;
+			default:	sprintf(InfoText, "Illegal LCD line: %d\n", Line);
+								CHECK(FALSE, InfoText);
+			break;
+		}
+		
+		usleep(500);
+		if (errno != 0)
+			printf("Write error LCD: %s Msg: %s\r\n", strerror(errno), Msg);
+	}
+}
 
 char 						Scan4Sensors(void) {
-  int              fp, Idx, Id;
+  int              Idx, Id;
+  FILE             *fp;
 	char							Addr[100];
 
 // Check which sensors that are actually present and put them in list in sorted order (1..n)
   errno = 0;
   for (Idx = 0; Idx < EXP_NO_OF_DEVICES; Idx++) {
 		sprintf(Addr, "%s%s", OWFS_MP, ExpOneWireList[Idx].Path); 
-/*
-		printf(Addr);  // For debugging of new sensors
-		printf("\r\n");
-*/		
+
+		//printf(Addr);  // For debugging of new sensors
+		//printf("-\r\n");
+		
     if((fp = fopen(Addr, "r")) != NULL)  {
-      fclose(fp);
+      fclose(fp);		
+	//printf("Open ok: %s\r\n", Addr);  // For debugging of new sensors
       Id = ExpOneWireList[Idx].Id;
-					//printf("%s\r\n", Addr);  // For debugging of new sensors
+
       if (!(OneWireList[Id].Present)) {
         OneWireList[Id].Present = TRUE;
         OneWireList[Id].Id  = Id;
@@ -187,9 +259,14 @@ char 						Scan4Sensors(void) {
         strncpy(OneWireList[Id].Path, ExpOneWireList[Idx].Path, 100); 
         sprintf(InfoText, "Fnd[%d] %s:%s\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path);
         LOG_MSG(InfoText);
+				if (DEV_LCD == OneWireList[Id].DevType) {  // Initiate all 1W LCDs
+	        Init1WLCD(OneWireList[Id].Id);
+					sprintf(InfoText, "%s initiated\r\n", OneWireList[Id].SensName);
+					LOG_MSG(InfoText);
+				}
       }  
     } else {// End if   
-     //printf("ERROR: %s  Sensor :  %s\n", strerror(errno), ExpOneWireList[Idx].Path);
+    // printf("ERROR: %s  Sensor :  %s\n", strerror(errno), ExpOneWireList[Idx].Path);
       errno = 0;
     }
   } // End for

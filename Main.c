@@ -33,7 +33,7 @@
 #include "lcd_def.h" 
 #include <lcd.h>
 #elif BB_DEFINED
-#include "WiringBBB.h"
+
 #endif
 
 #include "SysDef.h"
@@ -43,6 +43,12 @@
 #include "TimeoutHandler.h"
 #include "OneWireHandlerOWFSFile.h"
 //#include "SocketServer.h"
+
+// Definitions for LCD display
+#define	Line1   0
+#define	Line2  20
+#define	Line3  40
+#define Line4  60 
 
 void * RdKeyboardKnob(enum ProcTypes_e ProcType);
 void * RdKeyboardBut(enum ProcTypes_e ProcType);
@@ -61,7 +67,7 @@ void   BuildBarText(char *Str, float Level, float Resolution);
 void   QuitProc(void);
  
 // Define global variables
-
+char Once=0;
 
 char    InfoText[300];
 char    LCDText[100];// Holds the text currently displayed on LCD, with some extra bytes so we don't overwrite..
@@ -143,11 +149,8 @@ int    main(int argc, char *argv[]) {
 //P8_4  ==> RS
 //P8_3  ==> E
 
-
-printf("Display updated\r\n");
-
 #endif		
-#ifdef LCD_PRESENT
+
    memset(LCDText, ' ', 100); // Clear display buffer
 #ifdef RPI_DEFINED
 	//  LCD_CTRL(ProcState.fd.lcd, LCD_Reset);
@@ -155,21 +158,20 @@ printf("Display updated\r\n");
     LCD_HOME(ProcState.fd.lcd);	
 //	LCD_CTRL(ProcState.fd.lcd, LCD_On); 
 //	LCD_CTRL(ProcState.fd.lcd, LCD_Cursor_On);
-#elif BB_DEFINED
 
-#endif
+
 #endif  
-  InitProc(&ProcState);
+  InitProc(&ProcState); sleep(2);
  // signal(SIGINT, QuitProc);  // Handles CTRL-C command
-#ifdef LCD_PRESENT
+
 // Note: Line 2 & 3 must be swapped..!
   sprintf(&LCDText[0], "Josefin started      ");
-  sprintf(&LCDText[40]," Ver: %s              ", __DATE__);
+  sprintf(&LCDText[40],"  Ver: %s        ", __DATE__);
   sprintf(&LCDText[20],"                     ");
   sprintf(&LCDText[60]," Golding production  ");
  // LCD_WRITE(ProcState.fd.lcd, 1, 1, LCDText);
 
-#ifdef RPI_DEFINED	
+#ifdef LCD_DEFINED	
 	lcdPosition (ProcState.fd.lcd, 0, 0) ;
 	for (Idx = 0; Idx < 80; Idx++)
 	  lcdPutchar(ProcState.fd.lcd, LCDText[Idx]);		
@@ -177,10 +179,17 @@ printf("Display updated\r\n");
  
 	//ret = write(ProcState.fd.lcd, LCDText, 80);
 	// printf("LCD Write: %d bytes\r\n", ret);
-#elif BB_DEFINED
-
-#endif	// BB/RPI_DEFINED
-#endif // LCD_DEFINED
+#endif
+#ifdef OWLCD_PRESENT
+	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
+	LCD1W_WRITE(LCD1, 3, &LCDText[Line2]);
+	LCD1W_WRITE(LCD1, 2, &LCDText[Line3]);
+	LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);	
+	LCD1W_WRITE(LCD2, 1, &LCDText[Line1]);
+	LCD1W_WRITE(LCD2, 3, &LCDText[Line2]);
+	LCD1W_WRITE(LCD2, 2, &LCDText[Line3]);
+	LCD1W_WRITE(LCD2, 4, &LCDText[Line4]);	
+#endif 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTRefrig", SIGInitMeasTempRefrig, 3 Sec); 
@@ -400,14 +409,14 @@ printf("Display updated\r\n");
 						CHECK(FALSE, "Undefined sensor...\n");
 					break;  	
 				}
-#ifdef LCD_PRESENT
+
        LCDDisplayUpdate(&ProcState);
-#else
-        if (Msg->SensorResp.Sensor == WATER_TEMP) {// Just to secure only 1 line when no display present
+
+ /*       if (Msg->SensorResp.Sensor == WATER_TEMP) {// Just to secure only 1 line when no display present
           LCDDisplayUpdate(&ProcState);
         }  
+*/
 
-#endif
       break;
 
       case SIGOpButOn:
@@ -519,10 +528,7 @@ void   LCDDisplayUpdate(struct ProcState_s *PState) {
 	otherwise dummy chars will destroy presentation
 	*/
 	
-#define	Line1   0
-#define	Line2  20
-#define	Line3  40
-#define Line4  60 
+
 	short   Resolution;
   char    Indicator;
 
@@ -680,53 +686,10 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
   }  // End of switch  
 
 #ifdef OWLCD_PRESENT
-int	idxx, fd1WLCD1, fd1WLCD2, fd1WLCD3, fd1WLCD4, fd1WLCDon, fd1WLCDBacklight;
-char  Addr[100], Addr2[100], Temp2[20];
-
-  OPEN_PIPE(fd1WLCD1,  "/mnt/1wire/FF.EB0700000100/line20.0", O_WRONLY|O_NONBLOCK);
-  OPEN_PIPE(fd1WLCD2,  "/mnt/1wire/FF.EB0700000100/line20.1", O_WRONLY|O_NONBLOCK);
-  OPEN_PIPE(fd1WLCD3,  "/mnt/1wire/FF.EB0700000100/line20.2", O_WRONLY|O_NONBLOCK);
-  OPEN_PIPE(fd1WLCD4,  "/mnt/1wire/FF.EB0700000100/line20.3", O_WRONLY|O_NONBLOCK);
-   OPEN_PIPE(fd1WLCDon, "/mnt/1wire/FF.EB0700000100/LCDon", O_WRONLY|O_NONBLOCK);
-   OPEN_PIPE(fd1WLCDBacklight, "/mnt/1wire/FF.EB0700000100/backlight", O_WRONLY|O_NONBLOCK);
-/*
-	 sprintf(Addr, "/mnt/1wire/FF.EB0700000100/line20.0");
-	if((fd1WLCD = fopen(Addr, "r")) == NULL)  {
-		sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, Addr);
-		CHECK(FALSE, InfoText);
-		// fclose(fp); Don't close, fp == NULL!!
-	}
-	printf("Open OK: %s %d %s\r\n", strerror(errno), errno, Addr);
-
-	fd1WLCD = open (Addr, O_WRONLY|O_NONBLOCK);
-	printf("Open: %s %d %s\r\n", strerror(errno), errno, Addr);
-
-	sprintf(Addr2, "/mnt/1wire/FF.EB0700000100/LCDon");
-	fd1WLCD2 = open (Addr2, "w");
-	printf("Open: %s %d %s\r\n", strerror(errno), errno, Addr2);
-
-	*/  
-	//fprintf(fd1WLCD2, "1");
-	//  memcpy(&Temp2, &LCDText[Line1], 20);
-	//	Temp2[19] = '\0';
-	/*	fprintf(fd1WLCD, "xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-		printf("Write Resp: %s %d \r\n", strerror(errno), errno, Addr2);
-
-		printf("LCD opened ok: %s\r\n", Temp2);
-		*/
-   // sprintf(Temp2, "Hejsan Arne");
-		  //fputc(LCDText[idxx], fd1WLCD);
-		write(fd1WLCDon, "1", 1);
-		write(fd1WLCDBacklight, "1", 1);
-		
-		write(fd1WLCD2, &LCDText[Line2], 20); 
-		write(fd1WLCD3, &LCDText[Line3], 20); 
-		write(fd1WLCD4, &LCDText[Line4], 20); 
-	close (fd1WLCD1);
-	close (fd1WLCD2);
-	close (fd1WLCD3);
-	close (fd1WLCD4);
-	close (fd1WLCDon);
+LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
+LCD1W_WRITE(LCD1, 2, &LCDText[Line2]);
+LCD1W_WRITE(LCD1, 3, &LCDText[Line3]);
+LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);
 	
 #endif 
  
@@ -757,7 +720,7 @@ if (ret < 0) printf("LCD Write 2: %d bytes\r\n", ret);
 	}
 	
 #else
-  printf(" %s \n", LCDText);
+  //printf(" %s \n", LCDText);
 #endif
 }  // End of function LCDDisplayUpdate 
 void   OpButPressed(struct ProcState_s *PState)    {

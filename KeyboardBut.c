@@ -22,11 +22,12 @@
 #include <signal.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include "OneWireHandlerOWFSFile.h"
 #ifdef RPI_DEFINED
 #include <wiringPi.h>
 
 #elif BB_DEFINED
-#include "BeagleBone_gpio.h"
+#include "SimpleGPIO.h"
 
 #endif
 
@@ -49,9 +50,8 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 	int 		But_Rgt   = 9;    	// SDA0 2 header pin 3
 
 #elif BB_DEFINED
-  struct gpioID	But_Op;
-  struct gpioID	But_Rgt;
-	
+	int 		But_Op    = 67; 			// GPIO 67 header pin 8, P8
+	int 		But_Rgt   = 60;     	// GPIO 60 header pin 12, P9
 #endif	
 
 
@@ -72,6 +72,8 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 	
   } else if (ProcType == HOSTENV) {
     // Do nothing  printf("Kbd defined HOST\n");
+	ret = 1; // No kbd used
+   printf("Host defined\r\n");
   }
   else
     CHECK(FALSE, "Unknown processor type\n");
@@ -87,8 +89,10 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 	pinMode(But_Op, INPUT);
 	pinMode(But_Rgt, INPUT);
 #elif BB_DEFINED
-	//pinMode(But_Op, 1, INPUT);
-	//pinMode(But_Rgt,1,  INPUT);
+	gpio_export(But_Op);
+	gpio_export(But_Rgt);
+	gpio_set_dir(But_Op, INPUT_PIN);
+	gpio_set_dir(But_Rgt, INPUT_PIN);
 #endif
 
   LOG_MSG("Started\n");
@@ -101,6 +105,9 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 #ifdef RPI_DEFINED
 // Check if Right button pressed	
     ret = digitalRead(But_Op);
+#elif BB_DEFINED
+		gpio_get_value(But_Op, &ret);
+#endif		
 		//printf(" OP: %d\r", ret);
 		if (ret != 0)  // Button is NOT pressed!!
 			OpButOn = FALSE;            // Button not pressed
@@ -108,20 +115,25 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
       OpButOn = TRUE;
       Msg->SigNo = SIGOpButOn;// Send signal	
       SEND(fd_main, Msg, sizeof(union SIGNAL));
-		//  printf("Oppressed %d\r\n", ret);
+		//printf("Oppressed %d\r\n", ret);
 		}
 		
 // Check if Right button pressed			
-    ret = digitalRead(But_Rgt);
+#ifdef RPI_DEFINED
+    ret = digitalRead(But_Rgt);		
+#elif BB_DEFINED	
+		gpio_get_value(But_Rgt, &ret);
+	
+#endif // RPI_DEFINED
 		if (ret != 0)	// Button is NOT pressed!!
 			RgtButOn = FALSE;            // Button not pressed
     else if (RgtButOn == FALSE)  { // Button pressed and released since last read
       RgtButOn = TRUE;
       Msg->SigNo = SIGRghtButOn;// Send signal	
       SEND(fd_main, Msg, sizeof(union SIGNAL));
-		//  printf("Rgtpressed %d\r\n", ret);
+		//printf("Rgtpressed %d\r\n", ret);
 		}
-#endif // RPI_DEFINED
+
 
    } // while
 	  exit(0);

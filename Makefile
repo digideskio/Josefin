@@ -1,13 +1,12 @@
-<<<<<<< HEAD
-
 # Makefile for Josefin 20130129, Lausanne!
 # Modified to also include BeagleBone, Aachen 20140214
   
 EXEC = Josefin
-OBJS = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
+OBJS-RPI = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
+OBJS-BB = SimpleGPIO.c Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.c
+OBJS-HOST = SimpleGPIO.c Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.c
 #OBJS = Main.o KeyboardBut.o OneWireHandlerHA7S.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.c
 LDLIBS += -lpthread # Support library for pthreads
-LDLIBS += -lwiringPi
 HOME = /home/$(USER)
   
 # Settings for stand-alone build(not from top directory)
@@ -16,40 +15,59 @@ ifndef UCLINUX_BUILD_USER
 	CC = $(COMPILER)	
 
 	WIRINGPILIB = /usr/local/include
-	ROOTDIR = $(HOME)/Dropbox/RaspberryPi
-	SRCDIR = $(HOME)/Dropbox/RaspBerryPi/Josefin
-	LINUXDIR = linux-2.6.x
 #	CFLAGS = -g -Wall	# -W all warnings, -g for debugging
-	CFLAGS = -g -W	# -W all warnings, -g for debugging
+	
 endif
-
-LDFLAGS = -Wl -v
-LDFLAGS	= -L/usr/local/lib
-
-CFLAGS-HOST = -IC:/MinGW/WiringPi/wiringPi/wiringPi \
-	-IC:/MinGW/ -IC:/MinGW/Einclude/  \
-	-I../include -IC:/MinGW/Einclude/x86_64-linux-gnu/ \
-	-IC:\MinGW\Einclude\x86_64-linux-gnu\gnu \
-	-I/../Einclude/  
-
+LDFLAGS-RPI = -Wl -v
+#LDFLAGS-BB = -W1 -v
+#LDFLAGS-HOST = -W1 -v
+LDFLAGS-RPI	= -L/usr/local/lib
 #define LCD present or not
-CFLAGS += -DLCD_PRESENT
-CFLAGS += -DRPI_DEFINED
+CFLAGS-RPI += -DLCD_PRESENT
+CFLAGS-RPI += -DRPI_DEFINED
+
+CFLAGS-BB = -g -W	# -W all warnings, -g for debugging
+CFLAGS-BB += -DLCD_PRESENT
+CFLAGS-BB += -DBB_DEFINED
+CFLAGS-BB += -DOWLCD_PRESENT
+
+CFLAGS-HOST = -g -W	# -W all warnings, -g for debugging
+#CFLAGS-HOST += -DLCD_PRESENT
+CFLAGS-HOST += -DHOST_DEFINED
+CFLAGS-HOST += -DOWLCD_PRESENT
+#CFLAGS-HOST += -DLCD_PRESENT
 
 
 # Additional options to compiler
-CFLAGS += -I$(WIRINGPILIB)
+CFLAGS-RPI += -I$(WIRINGPILIB)
+
+LDLIBS-RPI += -lwiringPi
 
 
-$(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
-	echo Default Compiled
+
+#$(EXEC): $(OBJS)
+#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
+#	echo Default Compiled
+beagle:
+	echo Beagle Compiled
+ 
+#CFLAGS += -DBB_DEFINED
+#CFLAGS += -DLCD_PRESENT
+#		gcc -g  -DBB_DEFINED $(CFLAGS-BB) -o Josefin SimpleGPIO.o Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.o -lpthread 
+		gcc  $(CFLAGS-BB) $(LDFLAGS-BB)  -o Josefin $(OBJS-BB) $(LDLIBS$(LDLIBS_$@))
+
+
+
+rpi:
+
+
+host:
+# Additional options to compiler
+	echo "Host entered"
+
 	
-beagle: 
-CFLAGS += -DBB_DEFINED
+		gcc  $(CFLAGS-HOST) $(LDFLAGS-HOST)  -o Josefin $(OBJS-HOST) $(LDLIBS$(LDLIBS_$@))
 
-	
-all: $(EXEC) install
 
 debug: $(EXEC) install
 	rdebug $(EXEC)
@@ -64,54 +82,7 @@ romfs:
 clean:
 	rm -rf $(EXEC) *.elf *.gdb *.o *.c~
 
-host:
-# Additional options to compiler
-	echo "Host entered"
-	echo $(CFLAGS-HOST)
-		echo test2
-	
-#$(EXEC): $(OBJS)
-
-#HOME = /home/$(USER)
-#gcc $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
-
-#		gcc -g -DHOST -I../uCES/ -I./src/ -I/$(HOME)/C4-VPX/src/modules/gold_twi_lcd/ -o Josefin Main.c KeyboardBut.c KeyboardKnob.c OneWireHandler.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c  -lpthread 
-#		gcc -g -Wall -DHOST -lwiringpi -LC:/MinGW/lib  -IC:/MinGW/WiringPi/wiringPi/wiringPi -IC:/MinGW/ -IC:/MinGW/Einclude/  -I../include -IC:/MinGW/Einclude/x86_64-linux-gnu/ -IC:\MinGW\Einclude\x86_64-linux-gnu\gnu -I/../Einclude/ -o Josefin Main.c KeyboardBut.c OneWireHandlerHA7S.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c  -lpthread 
-
-#		gcc -g  -DHOST -lwiringpi -LC:/MinGW/lib  $(CFLAGS-HOST) -o Josefin Main.c KeyboardBut.c OneWireHandlerHA7S.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.c -lpthread 
-		gcc -g  -DHOST -lwiringpi -LC:/MinGW/lib  $(CFLAGS-HOST) -o Josefin Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.o -lpthread 
-
-#-I$(ROOTDIR)/uClibc/include -I . -I../uCES/ -I./src/
 
 One:
 		gcc -g   -DHOST -llibwiringpi.so.1 -LC:/MinGW/lib  $(CFLAGS-HOST) -o Josefin OneWireHandlerHA7S.c  -lpthread 
 
-=======
-CFLAGS= -Wall -Wshadow -Wwrite-strings -Wsign-compare -Wfloat-equal \
-	-Wmissing-noreturn -Wbad-function-cast \
-	-Wmissing-prototypes -Winline -Wredundant-decls -O3
-
-all: example_04 example_03 example_02
-
-example_04: example_04.o beagle_gpio.o beagle_hd44780.o
-	gcc $(CFLAGS) -o $@ $+
-	strip $@
-
-example_03: example_03.o beagle_gpio.o beagle_hd44780.o
-	gcc $(CFLAGS) -o $@ $+
-	strip $@
-
-example_02: example_02.o beagle_gpio.o beagle_hd44780.o
-	gcc $(CFLAGS) -o $@ $+
-	strip $@
-
-example_01: example_01.o beagle_gpio.o beagle_hd44780.o
-	gcc $(CFLAGS) -o $@ $+
-	strip $@
-
-clean:
-	rm -f a.out *.o example_04 example_03 example_02 example_01
-
-%.o: %.c
-	gcc $(CFLAGS) -c -o $@ $+
->>>>>>> 4dc00d179a3b4657c5e32471cccb252229b6d495
