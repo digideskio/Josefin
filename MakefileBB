@@ -4,7 +4,7 @@
   
 EXEC = Josefin
 OBJS-RPI = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
-OBJS-BB = BeagleBone_gpio.o BeagleBone_hd44780.o Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
+OBJS-BB = SimpleGPIO.o BeagleBone_gpio.o BeagleBone_hd44780.o Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
 #OBJS = Main.o KeyboardBut.o OneWireHandlerHA7S.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.c
 LDLIBS += -lpthread # Support library for pthreads
 #LDLIBS += -lwiringPi
