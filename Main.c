@@ -35,7 +35,7 @@
 #include "lcd_def.h" 
 #include <lcd.h>
 #elif BB_DEFINED
-#include "BeagleGPIO/BeagleBone_gpio.h"
+#include "BeagleBone_gpio.h"
 #endif
 
 #include "SysDef.h"
@@ -134,7 +134,60 @@ int    main(int argc, char *argv[]) {
 	if (wiringPiSetup () == -1)  // Initiate WiringPi lib
     exit (1) ;  
 	ProcState.fd.lcd = lcdInit (4, 20, 4, 11, 10, 0,1,2,3,0,0,0,0) ; // Initiate LCD driver
+	// Note, HW wiring must correspond to this...
 #elif BB_DEFINED
+#define DISPLAY_DATA_ON_SCREEN 1
+/** 
+ * @brief This program (example_01.c) shows how to write data into a
+ * HD44780 LCD display using the manual process of setting up every 
+ * single pin with a binary value. For a complete description of these
+ * (and more) HD44780 commands, read the article by Julyan llett,
+ * "How to use intelligent L.C.D.s - Part One".
+ * 
+ * @section Setup
+ * Set-up the HD44780 screen as follows:
+ * Pin 1 - VSS - Connect to ground 
+ * Pin 2 - VCC - Connect to +5V (or lower voltage depending on your LCD)
+ * Pin 3 - VO - Attach a potentiometer here to adjust contrast 
+ * Pin 4 - Register Select (RS) - Connect to P8_4
+ * Pin 5 - Read/Write (R/W) - Connect to ground
+ * Pin 6 - Clock (Enable) - Connect to P8_3 
+ * Pin 7 - Data Bit 0 - Do not connect anything to it
+ * Pin 8 - Data Bit 1 - Do not connect anything to it
+ * Pin 9 - Data Bit 2 - Do not connect anything to it
+ * Pin 10 - Data Bit 3 - Do not connect anything to it
+ * Pin 11 - Data Bit 4 - Connect to P8_5  
+ * Pin 12 - Data Bit 5 - Connect to P8_11 
+ * Pin 13 - Data Bit 6 - Connect to P8_12 
+ * Pin 14 - Data Bit 7 - Connect to P8_14 
+ * Pin 15 - Backlight Anode (+) - Connect to +5V (or lower)
+ * Pin 16 - Backlight Cathode (-) - Connect to ground 
+ *
+ * @section Compilation
+ * Compile, and run, this code on the beagleBone terminal with the command: 
+ *
+ * gcc -c beagle_gpio.c ; gcc beagle_gpio.o example_01.c ; ./a.out ; rm -f a.out ;
+ * 
+ * @return Returns a 1 upon succesful program termination
+ **/
+  //specifies the pins that will be used
+	int selectedPins[]={P8_14,P8_12,P8_11,P8_5,P8_4,P8_3};
+
+	struct gpioID enabled_gpio[6];
+
+  initialize_Screen(enabled_gpio,selectedPins);	
+	
+	//clear screen
+	clear_Screen(enabled_gpio);
+
+	//types "yo!" to the screen
+	stringToScreen("yo!",enabled_gpio);
+
+	//go to the the second line 
+	goto_ScreenLine(1,enabled_gpio);
+	
+	//types "how are you?"
+	stringToScreen("how are you?",enabled_gpio);
 
 #endif		
 #ifdef LCD_PRESENT

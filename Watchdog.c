@@ -21,7 +21,7 @@
 #include <wiringPi.h>
 
 #elif BB_DEFINED
-#include "BeagleGPIO/BeagleBone_gpio.h"
+#include "BeagleBone_gpio.h"
 
 #endif
 
@@ -54,9 +54,10 @@ void * Watchdog(enum ProcTypes_e ProcType) {
 		delay (500);			
 #elif BB_DEFINED
 		//digitalWrite(OK_LED, 0);
-		delayms (500);
+		usleep (50000);
 		//digitalWrite(OK_LED, 1);
-		delayms (500);			
+		usleep(50000);
+			
 #endif
 					
 	}

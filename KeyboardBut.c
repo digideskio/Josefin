@@ -26,7 +26,7 @@
 #include <wiringPi.h>
 
 #elif BB_DEFINED
-#include "BeagleGPIO/BeagleBone_gpio.h"
+#include "BeagleBone_gpio.h"
 
 #endif
 
@@ -98,7 +98,7 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 		//Idx++;
     Msg = Buf; // Set ptr to receiving buffer
     usleep(20000); // Timeout between each scan of keyboard, to be adjusted
-
+#ifdef RPI_DEFINED
 // Check if Right button pressed	
     ret = digitalRead(But_Op);
 		//printf(" OP: %d\r", ret);
@@ -121,6 +121,7 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
       SEND(fd_main, Msg, sizeof(union SIGNAL));
 		//  printf("Rgtpressed %d\r\n", ret);
 		}
+#endif // RPI_DEFINED
 
    } // while
 	  exit(0);
