@@ -187,7 +187,11 @@ int    main(int argc, char *argv[]) {
 	goto_ScreenLine(1,enabled_gpio);
 	
 	//types "how are you?"
-	stringToScreen("how are you?",enabled_gpio);
+	stringToScreen("how are you This is a test message, the very first on BeagleBone Black LCD?",enabled_gpio);//go to the the second line 
+	goto_ScreenLine(3,enabled_gpio);
+	
+	//types "how are you?"
+	stringToScreen("how are you This is a test message, the very first on BeagleBone Black LCD?",enabled_gpio);
 printf("Display updated\r\n");
 
 #endif		
