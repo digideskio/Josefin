@@ -188,6 +188,7 @@ int    main(int argc, char *argv[]) {
 	
 	//types "how are you?"
 	stringToScreen("how are you?",enabled_gpio);
+printf("Display updated\r\n");
 
 #endif		
 #ifdef LCD_PRESENT
