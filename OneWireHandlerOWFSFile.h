@@ -55,7 +55,11 @@ struct ExpOneWireList_s {
       // (Id, "Your own sensor name", ROM type, "Hex name")
       // Note, several sensors may share the same Id, the last existing 
       // in the list below is used!  
-      //
+			// Syntax: 28.xxx  == using usb and OWFS
+			//				 800xxxxxxxx28 == using HA7S
+      // I have therefore included both definitions in the structure 
+			// below so you can use either. Remeber to add for both for new sensors
+			// New (not defined) sensors can be found in /mnt/1wire (mount point)
       // Ids must be 0..n in any order but with no gaps in the list!!
       /************************************************************/
  
@@ -64,15 +68,18 @@ struct ExpOneWireList_s {
 			{0, "T-ute ", 0x28,  "28.1ED0B7010000"},	// Inne
 			
       {0, "T-ute ", 0x28,  "45000000F7140A28"},  // Ute-givare båt    
+      {0, "T-ute ", 0x28,  "28.0A14F7000000"},  // Ute-givare båt    
 			{0, "T-ute ", 0x28,  "80000000F7BAE628"},  // Inne på board		
-			{0, "T-ute ", 0x28,  "28.E7C415010000"},  // Inne, ny own pwrd
+			{0, "T-ute ", 0x28,  "28.E7C415010000"},  // USB-OFS Inne, ny own pwrd
 
-      {1, "T-box ", 0x10,  "36000800B62E2A10"},  // Båt-Box
+      {1, "T-box ", 0x10,  "36000800B62E2A10"},  // HA7S Båt-Box     
+			{1, "T-box ", 0x10,  "10.2A2EB6000800"},   // USB-OWFS Båt-Box
       {1, "T-box ", 0x28,  "28.7EF3FE000000"},	 // Inne test, ny Own pwr
       {1, "T-box ", 0x28,  "21000001B8098028"},	// Inne test		 
       {1, "T-box ", 0x28,  "00000115fedb28"},	// Inne test
 			
-      {2, "T-kyl ", 0x28,  "C6000000C7A59128"}, // Båt-kyl
+      {2, "T-kyl ", 0x28,  "C6000000C7A59128"}, // HA7S Båt-kyl
+      {2, "T-kyl ", 0x28,  "28.91A5C7000000"},  // USB-OWFS Båt-kyl
       {2, "T-kyl ", 0x28,  "19000000F6EBCD28"},	// Inne test   
 			{2, "T-kyl ", 0x10,  "370000003478A710"},	// Inne test
 
@@ -84,10 +91,11 @@ struct ExpOneWireList_s {
       {4, "AD Int   ", 0x20,  "00000009afba20"},
       {4, "AD Int   ", 0x20,  "00000009c78520"}, Not used 090507, AGY
 */
-      {5, "AD Ext", 0x20,  "20.CF3714000000"}, // Ny-version Inne AD Water & diesel
+      {5, "AD Ext", 0x20,  "20.CF3714000000"}, // USB-OWFS Ny-version Inne AD Water & diesel
 			{5, "AD Ext", 0x20,  "20.EF4806000000"}, // AD Water & diesel
 			{5, "AD Ext", 0x20,  "000000094c9420"}, //  
-      {5, "AD Ext", 0x20,  "20.9149650000000"},  // AD i båt
+      {5, "AD Ext", 0x20,  "20.9149650000000"},  // AD i båt     
+			{5, "AD Ext", 0x20,  "20.915406000000"},  // USB-OWFS AD i båt
 			{5, "AD Ext", 0x20,  "20.626A060000000"}, // AD ext inne
 
 //    {2, "Temp kort" ,0x28,  "000000f7bae628"},
@@ -96,7 +104,8 @@ struct ExpOneWireList_s {
 
       {6, "T-hav ", 0x28,  "000000c7e85b28"}, // Tveksam funktion?
       {6, "T-hav ", 0x22,  "0000001aa55922"}, // Gammal givare, bytes
-      {6, "T-hav ", 0x22,  "0000000017C69F22"}, // BÅt-Gammal givare, bytes
+      {6, "T-hav ", 0x22,  "0000000017C69F22"}, // HA7S BÅt-Gammal givare, bytes
+      {6, "T-hav ", 0x22,  "22.9FC61700000"}, // USB-OWFS BÅt-Gammal givare, bytes
       {6, "T-hav ", 0x28,  "80000000f6ebcd28"}, // Inne
 			
       {7, "T-Vtn ", 0x28,  "80000000f6ebcd28"}, // Inne  
