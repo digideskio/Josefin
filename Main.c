@@ -27,8 +27,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-
-
 #ifdef RPI_DEFINED
 #include <wiringPi.h>
 #include <wiringSerial.h>
@@ -721,13 +719,11 @@ char  Addr[100], Addr2[100], Temp2[20];
 		write(fd1WLCD2, &LCDText[Line2], 20); 
 		write(fd1WLCD3, &LCDText[Line3], 20); 
 		write(fd1WLCD4, &LCDText[Line4], 20); 
-	
-		
-			
-		//  fprintf(fd1WLCD, "Test");
-
-	
-printf("Passed");
+	close (fd1WLCD1);
+	close (fd1WLCD2);
+	close (fd1WLCD3);
+	close (fd1WLCD4);
+	close (fd1WLCDon);
 	
 #endif 
  
