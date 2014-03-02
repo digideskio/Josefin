@@ -25,17 +25,16 @@
 #ifdef RPI_DEFINED
 #include <wiringPi.h>
 
-#elseif BB_DEFINED
-#include "BeagleGPIO/beaglebone_gpio.h"
+#elif BB_DEFINED
+#include "BeagleGPIO/BeagleBone_gpio.h"
+
 #endif
+
 
 #include "SysDef.h"
 //#include "KeyboardIO.h"
 #include "TimeoutHandler.h"
 #include "Main.h"
-
-#define INPUT 0
-#define OUTPUT 1
 
 void * RdKeyboardBut(enum ProcTypes_e ProcType) {
   int 	Idx, ButIdx, fd_I2CKnob, fd_main, fd_timo, fd_OpBut, fd_LftBut, fd_RgtBut, ret;
@@ -45,8 +44,15 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
   static unsigned char  Buf[sizeof(union SIGNAL)]; // Static due to must be placed in global memory (not stack) otherwise we get OS dump Misaligned data!!!
   union SIGNAL             *Msg;
   struct  input_event       ie; 
+#ifdef RPI_DEFINED
 	int 		But_Op    = 8; 			// GPIO 3 header pin 5
 	int 		But_Rgt   = 9;    	// SDA0 2 header pin 3
+
+#elif BB_DEFINED
+  struct gpioID	But_Op;
+  struct gpioID	But_Rgt;
+	
+#endif	
 
 
   if (ProcType == BF537) {
@@ -71,12 +77,19 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 
   OPEN_PIPE(fd_main, MAIN_PIPE, O_WRONLY);
 
+	
   OpButOn = FALSE;
   LftButOn = FALSE;
   RgtButOn = FALSE;
 // WiringPi initiated by Main.c
+#ifdef RPI_DEFINED
 	pinMode(But_Op, INPUT);
 	pinMode(But_Rgt, INPUT);
+#elif BB_DEFINED
+	//pinMode(But_Op, 1, INPUT);
+	//pinMode(But_Rgt,1,  INPUT);
+#endif
+
   LOG_MSG("Started\n");
 	Idx = 0;
 	ButIdx = 0;

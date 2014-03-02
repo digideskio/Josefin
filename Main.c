@@ -30,17 +30,17 @@
 
 
 #ifdef RPI_DEFINED
-#include <wiringSerial.h>
 #include <wiringPi.h>
+#include <wiringSerial.h>
+#include "lcd_def.h" 
 #include <lcd.h>
-
-#elseif BB_DEFINED
-#include "BeagleGPIO/beaglebone_gpio.h"
+#elif BB_DEFINED
+#include "BeagleGPIO/BeagleBone_gpio.h"
 #endif
 
 #include "SysDef.h"
 #include "Main.h"
-#include "lcd_def.h"  
+ 
 #include "KeyboardIO.h"
 #include "TimeoutHandler.h"
 #include "OneWireHandlerOWFSFile.h"
@@ -132,18 +132,22 @@ int    main(int argc, char *argv[]) {
 	} 
 #ifdef RPI_DEFINED
 	if (wiringPiSetup () == -1)  // Initiate WiringPi lib
-    exit (1) ;
+    exit (1) ;  
+	ProcState.fd.lcd = lcdInit (4, 20, 4, 11, 10, 0,1,2,3,0,0,0,0) ; // Initiate LCD driver
+#elif BB_DEFINED
+
 #endif		
 #ifdef LCD_PRESENT
    memset(LCDText, ' ', 100); // Clear display buffer
-
-   ProcState.fd.lcd = lcdInit (4, 20, 4, 11, 10, 0,1,2,3,0,0,0,0) ; // Initiate LCD driver
+#ifdef RPI_DEFINED
 	//  LCD_CTRL(ProcState.fd.lcd, LCD_Reset);
     LCD_CLEAR(ProcState.fd.lcd);
     LCD_HOME(ProcState.fd.lcd);	
 //	LCD_CTRL(ProcState.fd.lcd, LCD_On); 
 //	LCD_CTRL(ProcState.fd.lcd, LCD_Cursor_On);
+#elif BB_DEFINED
 
+#endif
 #endif  
   InitProc(&ProcState);
  // signal(SIGINT, QuitProc);  // Handles CTRL-C command
@@ -155,7 +159,7 @@ int    main(int argc, char *argv[]) {
   sprintf(&LCDText[60]," Golding production  ");
  // LCD_WRITE(ProcState.fd.lcd, 1, 1, LCDText);
 
-	
+#ifdef RPI_DEFINED	
 	lcdPosition (ProcState.fd.lcd, 0, 0) ;
 	for (Idx = 0; Idx < 80; Idx++)
 	  lcdPutchar(ProcState.fd.lcd, LCDText[Idx]);		
@@ -163,6 +167,9 @@ int    main(int argc, char *argv[]) {
  
 	//ret = write(ProcState.fd.lcd, LCDText, 80);
 	// printf("LCD Write: %d bytes\r\n", ret);
+#elif BB_DEFINED
+
+#endif	
 #endif
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 
@@ -675,10 +682,13 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
 //sleep(5);
  // LCD_WRITE(PState->fd.lcd, 1, 1, LCDText);	
  int i;
+ #ifdef RPI_DEFINED
  lcdPosition (PState->fd.lcd, 0, 0);
  for (i = 0; i < 80; i++) 
    lcdPutchar (PState->fd.lcd, LCDText[i]) ;
+#elif BB_DEFINED
 
+#endif
 if (ret < 0) printf("LCD Write 2: %d bytes\r\n", ret);
 
 	if (DebugOn) {

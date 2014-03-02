@@ -20,8 +20,9 @@
 #ifdef RPI_DEFINED
 #include <wiringPi.h>
 
-#elseif BB_DEFINED
-#include "BeagleGPIO/beaglebone_gpio.h"
+#elif BB_DEFINED
+#include "BeagleGPIO/BeagleBone_gpio.h"
+
 #endif
 
 #include "SysDef.h"
@@ -30,19 +31,33 @@
 
 #include "Main.h"
 
-#define INPUT 0
-#define OUTPUT 1
+
 #define OK_LED  16
 
 void * Watchdog(enum ProcTypes_e ProcType) {
-  // Wiringpi lib already initialized by Main program
+#ifdef RPI_DEFINED
 	pinModeGpio(OK_LED, OUTPUT);
+
+#elif BB_DEFINED
+
+
+#endif
+  // Wiringpi lib already initialized by Main program
+
 	LOG_MSG("Started\n"); 
 
 	while (TRUE) {
+#ifdef RPI_DEFINED
 		digitalWriteGpio(OK_LED, 0);
 		delay (500);
 		digitalWriteGpio(OK_LED, 1);
-		delay (500);				
+		delay (500);			
+#elif BB_DEFINED
+		//digitalWrite(OK_LED, 0);
+		delayms (500);
+		//digitalWrite(OK_LED, 1);
+		delayms (500);			
+#endif
+					
 	}
 }		

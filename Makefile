@@ -1,14 +1,12 @@
 
 # Makefile for Josefin 20130129, Lausanne!
 # Modified to also include BeagleBone, Aachen 20140214
-
+  
 EXEC = Josefin
-OBJS-RPI = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
-OBJS-BB = Main.o BeagleGPIO/BeagleBone_gpio.o BeagleGPIO/BeagleBone_hd44780.o  KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
-OBJS-HOST = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
+OBJS = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
 #OBJS = Main.o KeyboardBut.o OneWireHandlerHA7S.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.c
 LDLIBS += -lpthread # Support library for pthreads
-#LDLIBS += -lwiringPi
+LDLIBS += -lwiringPi
 HOME = /home/$(USER)
   
 # Settings for stand-alone build(not from top directory)
@@ -24,9 +22,8 @@ ifndef UCLINUX_BUILD_USER
 	CFLAGS = -g -W	# -W all warnings, -g for debugging
 endif
 
-#LDFLAGS = -Wl -v
-LDFLAGS = -v
-#LDFLAGS	= -L/usr/local/lib
+LDFLAGS = -Wl -v
+LDFLAGS	= -L/usr/local/lib
 
 CFLAGS-HOST = -IC:/MinGW/WiringPi/wiringPi/wiringPi \
 	-IC:/MinGW/ -IC:/MinGW/Einclude/  \
@@ -36,23 +33,20 @@ CFLAGS-HOST = -IC:/MinGW/WiringPi/wiringPi/wiringPi \
 
 #define LCD present or not
 CFLAGS += -DLCD_PRESENT
-#CFLAGS += -DRPI_DEFINED
-CFLAGS += -DBB_DEFINED
+CFLAGS += -DRPI_DEFINED
 
 
 # Additional options to compiler
-#CFLAGS += -I$(WIRINGPILIB)
+CFLAGS += -I$(WIRINGPILIB)
 
-$(EXEC): $(OBJS-BB)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS-BB) $(LDLIBS$(LDLIBS_$@))
 
+$(EXEC): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
+	echo Default Compiled
 	
 beagle: 
 CFLAGS += -DBB_DEFINED
 
-$(EXEC): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
-	echo Beagle Compiled
 	
 all: $(EXEC) install
 
@@ -71,7 +65,7 @@ clean:
 
 host:
 # Additional options to compiler
-	echo Host entered
+	echo "Host entered"
 	echo $(CFLAGS-HOST)
 		echo test2
 	
