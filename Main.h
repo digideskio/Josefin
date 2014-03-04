@@ -45,7 +45,7 @@
 #define SEARCH          	"model name"   /* Changed from CPU to this in uClinux R8 system */
 #define PATH_CPUINFO    	"/proc/cpuinfo"
 
-enum ProcTypes_e {BF533, BF537, RPI, HOSTENV};
+enum ProcTypes_e {BF533, BF537, RPI, BB, HOSTENV};
 /* Declaration of types */
 
 //#define NO_OF_MODES (3)  /* Change this vaule so it is the same as no of enum types -1, see below! */

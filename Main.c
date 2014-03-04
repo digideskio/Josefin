@@ -798,8 +798,11 @@ void   InitProc(struct ProcState_s *PState) {
 #elif RPI_DEFINED
   ProcessorType = RPI;
   LOG_MSG("RaspberryPi defined\n");
+#elif BB_DEFINED
+  ProcessorType = BB;
+  LOG_MSG("BeagleBone defined\n");
 #elif HOST_DEFINED
-  ProcessorType = BF537;
+  ProcessorType = HOSTENV;
   LOG_MSG("HOST defined\n");
 #else
   sprintf(InfoText, "Unknown processort type defined: %d \n", ProcessorType);

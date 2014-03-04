@@ -68,8 +68,9 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
     strcpy(RgtButton, STR_RGTBUT_BF533);
   } else if (ProcType == RPI) {
     
-  }
-  else if (ProcType == HOSTENV) {
+  } else if (ProcType == BB) {
+	
+  } else if (ProcType == HOSTENV) {
     // Do nothing  printf("Kbd defined HOST\n");
   }
   else
