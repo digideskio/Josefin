@@ -1,5 +1,8 @@
-#include "BeagleBone_gpio.h"
+#include "WiringBBB.h"
 
+
+
+unsigned int bitWrite(unsigned int groupOfBits, int bitVal, int bitLoc) {
 /** 
  * @brief Writes a bit into a particular location in an unsigned int variable (32 bits)
  * @param groupOfBits Some data resides in these 32 bits 
@@ -7,12 +10,10 @@
  * @param bitLoc Where in the groupOfBits, the value of bitVal will be written. 
  * Keep in mind that the bitLoc values ranges 0 to 31
  * @return Returns the updated groupOfBits
- **/ 
-unsigned int bitWrite(unsigned int groupOfBits, int bitVal, int bitLoc)
-{
-    if (bitVal==1) groupOfBits |= 1 << bitLoc;
+ **/    
+  if (bitVal==1) groupOfBits |= 1 << bitLoc;
     else groupOfBits &= ~(1 << bitLoc);     
-    return(groupOfBits);
+  return(groupOfBits);
 }
 
 /** 
@@ -21,16 +22,14 @@ unsigned int bitWrite(unsigned int groupOfBits, int bitVal, int bitLoc)
  * @param bitLoc Where in the groupOfBits, the value of bitVal will be written 
  * @return Retuns an integer with the bit value (1 or 0) that resides in bitLoc
  **/ 
-int bitRead(unsigned int groupOfBits, int bitLoc)
-{
+int bitRead(unsigned int groupOfBits, int bitLoc) {
     unsigned int bit = groupOfBits & (1 << bitLoc);
     if (bit!=0) bit=1;
     
     return(bit);
 }
  
-void pulsePin(struct gpioID enabled_gpio[],unsigned int data_to_write,int nbr_selectedPins, int pinID, int delay)
-{
+void pulsePin(struct gpioID enabled_gpio[],unsigned int data_to_write,int nbr_selectedPins, int pinID, int delay) {
 	data_to_write=bitWrite(data_to_write,1,pinID);
 	digitalWrite_multiple(enabled_gpio,nbr_selectedPins,data_to_write); 
 	if (delay>=0) delayms(delay);
@@ -40,8 +39,7 @@ void pulsePin(struct gpioID enabled_gpio[],unsigned int data_to_write,int nbr_se
 	if (delay>=0) delayms(delay);
 }
 
-void write_GPIO_value(int GPIONUMBER, int value)
-{
+void write_GPIO_value(int GPIONUMBER, int value) {
 	if (DEBUG_GPIO) 
 	{
 		printf("[start]... void write_GPIO_value(int GPIONUMBER, int value) >> ");
@@ -59,8 +57,7 @@ void write_GPIO_value(int GPIONUMBER, int value)
 }
 
 
-void digitalWrite_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins, unsigned int data_to_write)
-{
+void digitalWrite_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins, unsigned int data_to_write) {
 	int i;
 	//cycles every userdefined pin, and inializes its contents in the 
 	//selected_GPIOs[] array.
@@ -71,8 +68,7 @@ void digitalWrite_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins,
 
 }
 
-void pinMode_multiple(struct gpioID selected_GPIOs[],int selectedPins[], int nbr_selectedPins, const char *direction)
-{	
+void pinMode_multiple(struct gpioID selected_GPIOs[],int selectedPins[], int nbr_selectedPins, const char *direction) {	
 	int i;
 	//You are not allowed to use more than 32 active pins. This is not a 
 	//beagleboard limitation, but a limitation of this code.
@@ -86,14 +82,12 @@ void pinMode_multiple(struct gpioID selected_GPIOs[],int selectedPins[], int nbr
 	}	
 }
 
-void pinMode(struct gpioID *singlePin,int pinID, const char *direction)
-{
+void pinMode(struct gpioID *singlePin,int pinID, const char *direction) {
 	char export_filename[50]; 
     
     FILE *f = NULL; 
 
-	switch (pinID)
-	{
+	switch (pinID) 	{
 		case P8_3:
 			strcpy(singlePin->PINNAME, "P8_3");
 			strcpy(singlePin->GPIOID, "gpio1[6]");
@@ -185,8 +179,7 @@ void pinMode(struct gpioID *singlePin,int pinID, const char *direction)
 			break;
 		}
     
-    	if (strncmp(direction,"out",3) == 0)
-		{
+    	if (strncmp(direction,"out",3) == 0)		{
 			//set mux to mode 7 
 	 		sprintf(export_filename, "/sys/kernel/debug/omap_mux/%s", singlePin->GPIOMUX); 
 			f = fopen(export_filename,"w");
@@ -205,8 +198,7 @@ void pinMode(struct gpioID *singlePin,int pinID, const char *direction)
 		//export the pin
 		f = fopen("/sys/class/gpio/export","w");
         
-		if (f == NULL)
-		{
+		if (f == NULL)		{
          	printf( "\nERROR: There was a problem opening /sys/kernel/debug/omap_mux/%s\n", singlePin->GPIOMUX); 
 			printf("\n%s\t%s\t%s\t%d\n\n", singlePin->PINNAME,singlePin->GPIOID,singlePin->GPIOMUX,singlePin->GPIONUMBER);
             
@@ -215,8 +207,7 @@ void pinMode(struct gpioID *singlePin,int pinID, const char *direction)
         fprintf(f, "%d",singlePin->GPIONUMBER); 
         pclose(f); 
         
-		if (strncmp(direction,"out",3) == 0)
-		{
+		if (strncmp(direction,"out",3) == 0)		{
 	        //set the appropriate io direction (out)
 		 	sprintf(export_filename, "/sys/class/gpio/gpio%d/direction", singlePin->GPIONUMBER); 
 
@@ -233,14 +224,12 @@ void pinMode(struct gpioID *singlePin,int pinID, const char *direction)
 
         	write_GPIO_value(singlePin->GPIONUMBER,0);
         }
-        else
-        {
+        else        {
         	//right now, only P9_12 can be an input port...
         	assert(singlePin->GPIONUMBER==60);
         }
         
-        if (DEBUG_GPIO) 
-		{
+        if (DEBUG_GPIO) 		{
 			printf("\n");
 			printf("PINNAME\tGPIOID\t\tGPIOMUX\t\tGPIONBR\n");
 			printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -255,13 +244,11 @@ void pinMode(struct gpioID *singlePin,int pinID, const char *direction)
 
 }
  
-void digitalWrite(struct gpioID singlePin,unsigned int data_to_write)
-{
+void digitalWrite(struct gpioID singlePin,unsigned int data_to_write) {
 	write_GPIO_value(singlePin.GPIONUMBER,data_to_write);
 }
 
-void cleanup(struct gpioID singlePin)
-{
+void cleanup(struct gpioID singlePin) {
 	FILE *f = NULL; 
 
 	//unexport the pin
@@ -271,8 +258,7 @@ void cleanup(struct gpioID singlePin)
 	pclose(f);         
 }
 
-void cleanup_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins)
-{	
+void cleanup_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins) {	
 	int i;
 	//You are not allowed to use more than 32 active pins. This is not a 
 	//beagleboard limitation, but a limitation of this code.
@@ -290,8 +276,7 @@ void cleanup_multiple(struct gpioID selected_GPIOs[], int nbr_selectedPins)
 //Right now only P9_3 is configured. If we leave the pin unconnected, it
 //will read a 1 by default (pull up network). If we make a connection to ground
 //then the pin will be 0.
-unsigned int digitalRead(struct gpioID singlePin)
-{
+unsigned int digitalRead(struct gpioID singlePin) {
 	char export_filename[128];
    	char line [ 128 ];
    	unsigned int x;
@@ -313,7 +298,6 @@ unsigned int digitalRead(struct gpioID singlePin)
    	return(x-48);
 }
 
-void delayms(unsigned long mseconds)
-{
+void delayms(unsigned long mseconds) {
 	usleep(mseconds*1000);
 }

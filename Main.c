@@ -35,7 +35,7 @@
 #include "lcd_def.h" 
 #include <lcd.h>
 #elif BB_DEFINED
-#include "BeagleBone_gpio.h"
+#include "WiringBBB.h"
 #endif
 
 #include "SysDef.h"
@@ -136,62 +136,16 @@ int    main(int argc, char *argv[]) {
 	ProcState.fd.lcd = lcdInit (4, 20, 4, 11, 10, 0,1,2,3,0,0,0,0) ; // Initiate LCD driver
 	// Note, HW wiring must correspond to this...
 #elif BB_DEFINED
-#define DISPLAY_DATA_ON_SCREEN 1
-/** 
- * @brief This program (example_01.c) shows how to write data into a
- * HD44780 LCD display using the manual process of setting up every 
- * single pin with a binary value. For a complete description of these
- * (and more) HD44780 commands, read the article by Julyan llett,
- * "How to use intelligent L.C.D.s - Part One".
- * 
- * @section Setup
- * Set-up the HD44780 screen as follows:
- * Pin 1 - VSS - Connect to ground 
- * Pin 2 - VCC - Connect to +5V (or lower voltage depending on your LCD)
- * Pin 3 - VO - Attach a potentiometer here to adjust contrast 
- * Pin 4 - Register Select (RS) - Connect to P8_4
- * Pin 5 - Read/Write (R/W) - Connect to ground
- * Pin 6 - Clock (Enable) - Connect to P8_3 
- * Pin 7 - Data Bit 0 - Do not connect anything to it
- * Pin 8 - Data Bit 1 - Do not connect anything to it
- * Pin 9 - Data Bit 2 - Do not connect anything to it
- * Pin 10 - Data Bit 3 - Do not connect anything to it
- * Pin 11 - Data Bit 4 - Connect to P8_5  
- * Pin 12 - Data Bit 5 - Connect to P8_11 
- * Pin 13 - Data Bit 6 - Connect to P8_12 
- * Pin 14 - Data Bit 7 - Connect to P8_14 
- * Pin 15 - Backlight Anode (+) - Connect to +5V (or lower)
- * Pin 16 - Backlight Cathode (-) - Connect to ground 
- *
- * @section Compilation
- * Compile, and run, this code on the beagleBone terminal with the command: 
- *
- * gcc -c beagle_gpio.c ; gcc beagle_gpio.o example_01.c ; ./a.out ; rm -f a.out ;
- * 
- * @return Returns a 1 upon succesful program termination
- **/
-  //specifies the pins that will be used
-	int selectedPins[]={P8_14,P8_12,P8_11,P8_5,P8_4,P8_3};
+//ProcState.fd.lcd = lcdInit (4, 20, 4, P8_3, P8_4, P8_5, P8_11, P8_12, P8_14,P8_12,0,0,0) ; // Initiate LCD driver
 
-	struct gpioID enabled_gpio[6];
+//P8_14 ==> DB7
+//P8_12 ==> DB6
+//P8_11 ==> DB5
+//P8_5  ==> DB4 
+//P8_4  ==> RS
+//P8_3  ==> E
 
-  initialize_Screen(enabled_gpio,selectedPins);	
-	
-	//clear screen
-	clear_Screen(enabled_gpio);
 
-	//types "yo!" to the screen
-	stringToScreen("yo!",enabled_gpio);
-
-	//go to the the second line 
-	goto_ScreenLine(1,enabled_gpio);
-	
-	//types "how are you?"
-	stringToScreen("how are you This is a test message, the very first on BeagleBone Black LCD?",enabled_gpio);//go to the the second line 
-	goto_ScreenLine(3,enabled_gpio);
-	
-	//types "how are you?"
-	stringToScreen("how are you This is a test message, the very first on BeagleBone Black LCD?",enabled_gpio);
 printf("Display updated\r\n");
 
 #endif		
@@ -227,8 +181,8 @@ printf("Display updated\r\n");
 	// printf("LCD Write: %d bytes\r\n", ret);
 #elif BB_DEFINED
 
-#endif	
-#endif
+#endif	// BB/RPI_DEFINED
+#endif // LCD_DEFINED
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTRefrig", SIGInitMeasTempRefrig, 3 Sec); 
@@ -726,7 +680,57 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
       CHECK(FALSE, InfoText);
     break;
   }  // End of switch  
-  
+
+#ifdef OWLCD_PRESENT
+int	idxx, fd1WLCD1, fd1WLCD2, fd1WLCD3, fd1WLCD4, fd1WLCDon;
+char  Addr[100], Addr2[100], Temp2[20];
+
+  OPEN_PIPE(fd1WLCD1,  "/mnt/1wire/FF.EB0700000100/line20.0", O_WRONLY|O_NONBLOCK);
+  OPEN_PIPE(fd1WLCD2,  "/mnt/1wire/FF.EB0700000100/line20.1", O_WRONLY|O_NONBLOCK);
+  OPEN_PIPE(fd1WLCD3,  "/mnt/1wire/FF.EB0700000100/line20.2", O_WRONLY|O_NONBLOCK);
+  OPEN_PIPE(fd1WLCD4,  "/mnt/1wire/FF.EB0700000100/line20.3", O_WRONLY|O_NONBLOCK);
+   OPEN_PIPE(fd1WLCDon, "/mnt/1wire/FF.EB0700000100/LCDon", O_WRONLY|O_NONBLOCK);
+/*
+	 sprintf(Addr, "/mnt/1wire/FF.EB0700000100/line20.0");
+	if((fd1WLCD = fopen(Addr, "r")) == NULL)  {
+		sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, Addr);
+		CHECK(FALSE, InfoText);
+		// fclose(fp); Don't close, fp == NULL!!
+	}
+	printf("Open OK: %s %d %s\r\n", strerror(errno), errno, Addr);
+
+	fd1WLCD = open (Addr, O_WRONLY|O_NONBLOCK);
+	printf("Open: %s %d %s\r\n", strerror(errno), errno, Addr);
+
+	sprintf(Addr2, "/mnt/1wire/FF.EB0700000100/LCDon");
+	fd1WLCD2 = open (Addr2, "w");
+	printf("Open: %s %d %s\r\n", strerror(errno), errno, Addr2);
+
+	*/  
+	//fprintf(fd1WLCD2, "1");
+	//  memcpy(&Temp2, &LCDText[Line1], 20);
+	//	Temp2[19] = '\0';
+	/*	fprintf(fd1WLCD, "xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+		printf("Write Resp: %s %d \r\n", strerror(errno), errno, Addr2);
+
+		printf("LCD opened ok: %s\r\n", Temp2);
+		*/
+   // sprintf(Temp2, "Hejsan Arne");
+		  //fputc(LCDText[idxx], fd1WLCD);
+		write(fd1WLCD1, &LCDText[Line1], 20);
+		write(fd1WLCD2, &LCDText[Line2], 20); 
+		write(fd1WLCD3, &LCDText[Line3], 20); 
+		write(fd1WLCD4, &LCDText[Line4], 20); 
+	
+		
+			
+		//  fprintf(fd1WLCD, "Test");
+
+	
+printf("Passed");
+	
+#endif 
+ 
 #ifdef LCD_PRESENT
   //TIMER_START(TMLCD1);
 

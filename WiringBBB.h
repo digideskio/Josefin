@@ -1,5 +1,5 @@
-#ifndef BEAGLE_GPIO_H_GUARD
-#define BEAGLE_GPIO_H_GUARD
+#ifndef WIRINGBBB_H_GUARD
+#define WIRINGBBB_H_GUARD
  
 #include <stdio.h> 
 #include <stdlib.h> 
@@ -26,8 +26,7 @@
 
 /** @brief Contains all elements which we need to pass into the beagleboard 
  * to specify which GPIO pin we want to turn ON/OFF **/ 
-struct gpioID
-{
+struct gpioID {
 	char PINNAME[10];   //eg. P8_3
 	char GPIOID[10]; 	//e.g: gpio1[6] 
 	int GPIONUMBER;     //e.g: 38
