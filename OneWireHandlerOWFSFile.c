@@ -185,7 +185,7 @@ char 						Scan4Sensors(void) {
         strncpy(OneWireList[Id].SensName, ExpOneWireList[Idx].SensName, 16);
         OneWireList[Id].DevType = ExpOneWireList[Idx].DevType;
         strncpy(OneWireList[Id].Path, ExpOneWireList[Idx].Path, 100); 
-        sprintf(InfoText, "Fnd-%d: %s:%s\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path);
+        sprintf(InfoText, "Fnd[%d] %s:%s\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path);
         LOG_MSG(InfoText);
       }  
     } else {// End if   

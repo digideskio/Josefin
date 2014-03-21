@@ -680,7 +680,7 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
   }  // End of switch  
 
 #ifdef OWLCD_PRESENT
-int	idxx, fd1WLCD1, fd1WLCD2, fd1WLCD3, fd1WLCD4, fd1WLCDon;
+int	idxx, fd1WLCD1, fd1WLCD2, fd1WLCD3, fd1WLCD4, fd1WLCDon, fd1WLCDBacklight;
 char  Addr[100], Addr2[100], Temp2[20];
 
   OPEN_PIPE(fd1WLCD1,  "/mnt/1wire/FF.EB0700000100/line20.0", O_WRONLY|O_NONBLOCK);
@@ -688,6 +688,7 @@ char  Addr[100], Addr2[100], Temp2[20];
   OPEN_PIPE(fd1WLCD3,  "/mnt/1wire/FF.EB0700000100/line20.2", O_WRONLY|O_NONBLOCK);
   OPEN_PIPE(fd1WLCD4,  "/mnt/1wire/FF.EB0700000100/line20.3", O_WRONLY|O_NONBLOCK);
    OPEN_PIPE(fd1WLCDon, "/mnt/1wire/FF.EB0700000100/LCDon", O_WRONLY|O_NONBLOCK);
+   OPEN_PIPE(fd1WLCDBacklight, "/mnt/1wire/FF.EB0700000100/backlight", O_WRONLY|O_NONBLOCK);
 /*
 	 sprintf(Addr, "/mnt/1wire/FF.EB0700000100/line20.0");
 	if((fd1WLCD = fopen(Addr, "r")) == NULL)  {
@@ -715,7 +716,9 @@ char  Addr[100], Addr2[100], Temp2[20];
 		*/
    // sprintf(Temp2, "Hejsan Arne");
 		  //fputc(LCDText[idxx], fd1WLCD);
-		write(fd1WLCD1, &LCDText[Line1], 20);
+		write(fd1WLCDon, "1", 1);
+		write(fd1WLCDBacklight, "1", 1);
+		
 		write(fd1WLCD2, &LCDText[Line2], 20); 
 		write(fd1WLCD3, &LCDText[Line3], 20); 
 		write(fd1WLCD4, &LCDText[Line4], 20); 

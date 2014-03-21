@@ -95,7 +95,8 @@ struct ExpOneWireList_s {
 			
       {7, "T-Vtn ", 0x28,  "80000000f6ebcd28"}, // Inne  
 
-			{8, "LCD-1 ", 0xFF,  "420001000007EBFF"} // Inne LCD-1
+			{8, "LCD-1 ", 0xFF,  "420001000007EBFF"},// Inne LCD-1 HA7S format
+			{8, "LCD-1 ", 0xFF,  "FF.EB0700000100"}  // Inne LCD-1 OWFS format
 
     };
 		
