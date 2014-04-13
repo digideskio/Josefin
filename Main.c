@@ -185,10 +185,6 @@ int    main(int argc, char *argv[]) {
 	LCD1W_WRITE(LCD1, 3, &LCDText[Line2]);
 	LCD1W_WRITE(LCD1, 2, &LCDText[Line3]);
 	LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);	
-	LCD1W_WRITE(LCD2, 1, &LCDText[Line1]);
-	LCD1W_WRITE(LCD2, 3, &LCDText[Line2]);
-	LCD1W_WRITE(LCD2, 2, &LCDText[Line3]);
-	LCD1W_WRITE(LCD2, 4, &LCDText[Line4]);	
 #endif 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 

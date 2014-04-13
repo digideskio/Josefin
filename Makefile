@@ -2,7 +2,7 @@
 # Modified to also include BeagleBone, Aachen 20140214
   
 EXEC = Josefin
-OBJS-RPI = Main.o KeyboardBut.o OneWireHandlerOWFSFile.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.o
+OBJS-RPI = Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.c
 OBJS-BB = SimpleGPIO.c Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.c
 OBJS-HOST = SimpleGPIO.c Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.c
 #OBJS = Main.o KeyboardBut.o OneWireHandlerHA7S.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.c
@@ -18,13 +18,15 @@ ifndef UCLINUX_BUILD_USER
 #	CFLAGS = -g -Wall	# -W all warnings, -g for debugging
 	
 endif
-LDFLAGS-RPI = -Wl -v
+#LDFLAGS-RPI = -Wl -v
+
 #LDFLAGS-BB = -W1 -v
 #LDFLAGS-HOST = -W1 -v
 LDFLAGS-RPI	= -L/usr/local/lib
 #define LCD present or not
 CFLAGS-RPI += -DLCD_PRESENT
 CFLAGS-RPI += -DRPI_DEFINED
+CFLAGS-RPI += -DOWLCD_PRESENT
 
 CFLAGS-BB = -g -W	# -W all warnings, -g for debugging
 CFLAGS-BB += -DLCD_PRESENT
@@ -43,11 +45,9 @@ CFLAGS-RPI += -I$(WIRINGPILIB)
 
 LDLIBS-RPI += -lwiringPi
 
-
-
 #$(EXEC): $(OBJS)
-#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
-#	echo Default Compiled
+#$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
+#  echo Default Compiled
 beagle:
 	echo Beagle Compiled
  
@@ -56,9 +56,14 @@ beagle:
 #		gcc -g  -DBB_DEFINED $(CFLAGS-BB) -o Josefin SimpleGPIO.o Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.o -lpthread 
 		gcc  $(CFLAGS-BB) $(LDFLAGS-BB)  -o Josefin $(OBJS-BB) $(LDLIBS$(LDLIBS_$@))
 
-
-
 rpi:
+	echo Raspberry Compiled
+ 
+#CFLAGS += -DBB_DEFINED
+#CFLAGS += -DLCD_PRESENT
+#		gcc -g  -DBB_DEFINED $(CFLAGS-BB) -o Josefin SimpleGPIO.o Main.c KeyboardBut.c OneWireHandlerOWFSFile.c TimeoutHandler.c Watchdog.c crcutil.c SysDef.c SocketServer.o -lpthread 
+		gcc  $(CFLAGS-RPI) $(LDFLAGS-RPI)  -o Josefin $(OBJS-RPI) $(LDLIBS-RPI$(LDLIBS_$@))
+
 
 
 host:
