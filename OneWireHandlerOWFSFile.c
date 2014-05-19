@@ -277,10 +277,11 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
   char						Status;
   unsigned int 		lastcrc16;
   unsigned char		ScrPad[24]; 					
-  char	        	 AddrChA[100], AddrChB[100], AddrChC[100], AddrChD[100], line[80];
+  char	        	AddrChA[100], AddrChB[100], AddrChC[100], AddrChD[100], line[80];
   float						templong; 
 	
   // Set default values
+	Status = FALSE;
   for (idx = 0; idx < 4; idx++)
     AD[idx] = SENS_DEF_VAL;
   Status = FALSE;
@@ -295,7 +296,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 		sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, SensorPath);
 		CHECK(FALSE, InfoText);
 		// fclose(fp); Don't close, fp == NULL!!
-	return Status;
+		return Status;
 	} else {
 		if (fgets(line, 80, fp) == NULL) {// Read 1:th line of info from device
 			fclose(fp);
@@ -312,21 +313,44 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 				sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, SensorPath);
 				CHECK(FALSE, InfoText);
 				// fclose(fp); Don't close, fp == NULL!!
-			return Status;
-			} else 
+				return Status;
+			} else {
 				if (fgets(line, 80, fp) == NULL) {// Read 1:th line of info from device
 					fclose(fp);
 					sprintf(InfoText, "Read error %x %s \n", fp, SensorPath);
 					LOG_MSG(InfoText);
-			} else {
-				fclose(fp);	
-				Status = TRUE;  // I printed the sequence to get start adress, see for loop below
-				AD[1] = ConvLevelAD * atof(&line[3]);
-				printf("%s :AD1 %10.6f \r\n", line, AD[1]);
+				} else {
+					fclose(fp);	
+					Status = TRUE;  // I printed the sequence to get start adress, see for loop below
+					AD[1] = ConvLevelAD * atof(&line[3]);
+					printf("%s :AD1 %10.6f \r\n", line, AD[1]);
+				}
 			}
-			return Status;
-		}
+		
+			// Continue by reading Channel C
+			if((fp = fopen(AddrChC, "r")) == NULL)  {
+				sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, SensorPath);
+				CHECK(FALSE, InfoText);
+				// fclose(fp); Don't close, fp == NULL!!
+				return Status;
+			} else {
+				if (fgets(line, 80, fp) == NULL) {// Read 1:th line of info from device
+					fclose(fp);
+					sprintf(InfoText, "Read error %x %s \n", fp, SensorPath);
+					LOG_MSG(InfoText);
+				} else {
+					fclose(fp);	
+					Status = TRUE;  // I printed the sequence to get start adress, see for loop below
+					AD[2] = ConvLevelAD * atof(&line[3]);
+					printf("%s :AD2 %10.6f \r\n", line, AD[2]);
+					Status = TRUE; // All sensors read correctly
+				}
+			}
+			
+		} 
+	return Status;
 	}
+	
 } 	
 
 char 						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
