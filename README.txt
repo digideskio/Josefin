@@ -1,9 +1,10 @@
 Instruktioner
 
-
+Test att detta laddas ned
 BBB
-Starta OWFS samt Josefin genom dom två startup scripten.
+Starta OWFS samt Josefin genom dom tvï¿½ startup scripten.
 OWFSStartScript.service
 JosefinStartScript.service
 
-Anmäls till /lib/systemd/system     Googla på webben http://mattrichardson.com/BeagleBone-System-Services/
+Anmï¿½ls till /lib/systemd/system     Googla pï¿½ webben http://mattrichardson.com/BeagleBone-System-Services/
+
