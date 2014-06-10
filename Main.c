@@ -426,19 +426,26 @@ printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
 
       break;
 
+// Turn on backlight on Display when a button is pushed.
       case SIGOpButOn:
 //if  (DbgTest == 1) {printf("3: %d\r\n", Msg->SigNo);usleep(200000);}
+	 						ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+								Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
         OpButPressed(&ProcState);
         LCDDisplayUpdate(&ProcState);
 	    break;
       case SIGLftButOn:
 	//printf("Left button presssed Msg: %s\n");
+	 						ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+								Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
         RghtButPressed(&ProcState);
 //        LftButPressed(&ProcState); // Due to problems reading Left/Right. Step always Right!!!
         LCDDisplayUpdate(&ProcState);
       break;
       case SIGRghtButOn:
 	//printf("Right button presssed \n");
+								ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+								Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
         RghtButPressed(&ProcState);
         LCDDisplayUpdate(&ProcState);
       break;

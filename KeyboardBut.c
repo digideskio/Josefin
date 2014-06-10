@@ -72,9 +72,7 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 	
   } else if (ProcType == HOSTENV) {
     // Do nothing  printf("Kbd defined HOST\n");
-	ret = 1; // No kbd used
-   printf("Host defined\r\n");
-  }
+	  }
   else
     CHECK(FALSE, "Unknown processor type\n");
 
@@ -99,6 +97,8 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 	Idx = 0;
 	ButIdx = 0;
   while(TRUE) {
+
+
 		//Idx++;
     Msg = Buf; // Set ptr to receiving buffer
     usleep(20000); // Timeout between each scan of keyboard, to be adjusted
@@ -107,7 +107,24 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
     ret = digitalRead(But_Op);
 #elif BB_DEFINED
 		gpio_get_value(But_Op, &ret);
-#endif		
+	
+#elif HOST_DEFINED
+
+						printf("Select (O)peration (R)ight : ");
+						switch (getchar()) {
+      	 case 'O':
+      		 	Msg->SigNo = SIGOpButOn;// Send signal	
+      			 SEND(fd_main, Msg, sizeof(union SIGNAL));
+							 break;
+
+							 case 'R':
+	      	 	Msg->SigNo = SIGRghtButOn;// Send signal	
+	      		 SEND(fd_main, Msg, sizeof(union SIGNAL));
+						  break;
+					 }
+
+
+#endif
 		//printf(" OP: %d\r", ret);
 		if (ret != 0)  // Button is NOT pressed!!
 			OpButOn = FALSE;            // Button not pressed
