@@ -30,7 +30,11 @@
 #define LCD_CLEAR						5    		// LCD-1W
 */
  /* Declaration of types */
-  
+ 
+extern char 	          Set1WLCDOn(int LCD_Id); // Turn Display ON
+extern char 	          Set1WLCDBlkOn(int LCD_Id); // Turn backlight ON
+extern char												Set1WLCDBlkOff(int LCD_Id); // Turn backlight OFF 
+
 struct OneWireList_s {
 	 char						  Present; // Boolean indicating if sensor exists or not
    char             Id;

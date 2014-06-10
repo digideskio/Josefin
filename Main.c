@@ -97,7 +97,7 @@ int    main(int argc, char *argv[]) {
 
 	//ProcState.ModeState      = Water;          // Set initial value, for test purpose. TBD later
   ProcState.ModeState      = MainMode;          // Set initial value, for test purpose. TBD later 
-	ProcState.ServMode       = AnchStop;         	// Set initial value
+ 	ProcState.ServMode       = AnchStop;         	// Set initial value
   ProcState.MinOutTemp     = SENS_DEF_VAL;
   ProcState.MaxOutTemp     = SENS_DEF_VAL;
   ProcState.OutTemp        = SENS_DEF_VAL;
@@ -114,7 +114,7 @@ int    main(int argc, char *argv[]) {
   ProcState.MaxWaterTemp   = SENS_DEF_VAL;
   ProcState.WaterTemp      = SENS_DEF_VAL;
   ProcState.WaterLevel     = SENS_DEF_VAL;
-	ProcState.HWTemp         = SENS_DEF_VAL;
+	 ProcState.HWTemp         = SENS_DEF_VAL;
   ProcState.DieselLevel    = SENS_DEF_VAL;
   ProcState.BatVoltS       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
   ProcState.BatVoltF       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
@@ -127,7 +127,8 @@ int    main(int argc, char *argv[]) {
   ProcState.fd.sens        = 0;
   ProcState.fd.kbdBut      = 0;
   ProcState.fd.kbdKnob     = 0;
-  ProcState.UpdateInterval = 12;   // Timeout intervall for data & display update 
+  ProcState.UpdateInterval = 12;   // Timeout intervall for data & display update  
+	 ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
 
 // Initiate filter queue
 	for (Idx = 0; Idx < NO_OF_ELEM_IN_FILTERQUEU; Idx++) {
@@ -195,6 +196,7 @@ int    main(int argc, char *argv[]) {
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTSea", SIGInitMeasTempSea, 20 Sec); 
  // REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADInt", SIGInitMeasADInt, 2 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExt", SIGInitMeasADExt, 10 Sec); 
+  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitBlkOn", SIGMinuteTick, 60 Sec); 
 	sprintf(InfoText, "Josefin started Ver:  %s\n", __DATE__);
   LOG_MSG(InfoText);
   while (TRUE) {
@@ -204,7 +206,15 @@ int    main(int argc, char *argv[]) {
 		Msg = Buf;
  //if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
    switch(Msg->SigNo) {
-      case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
+      case SIGMinuteTick:  // Wait until backlight should be turned off
+  						REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
+printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
+        if (ProcState.LCDBlkOnTimer <= 0) 
+										Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
+								else
+										ProcState.LCDBlkOnTimer--;								
+      break;
+						case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
         Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
         Msg->SensorReq.Sensor = BOX_TEMP;

@@ -241,5 +241,6 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
 #define  SIGInitMeasADInt       (46)  // Initiate measurments from AD sensors
 #define  SIGInitMeasADExt       (47)  // Initiate measurments from AD sensors
 #define  SIGInitMeasTempHW      (48)  // Initiate measurments from Temperature sensors
-#define  SIGServCmdReq	        (49)  // Server command
+#define  SIGServCmdReq	         (49)  // Server command
+#define  SIGMinuteTick	         (50)  // Minute tick counter, for backlight off.
     

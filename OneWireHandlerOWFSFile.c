@@ -25,7 +25,7 @@
 #include "OneWireHandlerOWFSFile.h"
 
 // Declaration of prototypes
-char 	          Init1WLCD(int LCD_Id);
+
 char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
@@ -167,7 +167,7 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
 	  } // switch
   } // while (TRUE)
 }
-char 						Init1WLCD(int LCD_Id) {
+char 						Set1WLCDOn(int LCD_Id) {
   int           fp;
 	char					Addr[100];
 
@@ -178,12 +178,31 @@ char 						Init1WLCD(int LCD_Id) {
 		printf("Write	error LCDon: %s %d\r\n", strerror(errno), errno);
 	close(fp);
 	usleep(50000); // We need a delay before next command to LCD
+	close(fp);
+
+}
+char 						Set1WLCDBlkOn(int LCD_Id) {
+  int           fp;
+	char					Addr[100];
 
 	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
-  OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
+ OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
 	write(fp, "1", 1); // Turn backlight On
 	if (errno != 0)
-		printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
+		 printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
+	usleep(5000);
+	close(fp);
+
+}
+char 						Set1WLCDBlkOff(int LCD_Id) {
+  int           fp;
+	char					Addr[100];
+
+	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
+ OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
+	write(fp, "0", 1); // Turn backlight OFF
+	if (errno != 0)
+		 printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
 	usleep(5000);
 	close(fp);
 
@@ -260,7 +279,8 @@ char 						Scan4Sensors(void) {
         sprintf(InfoText, "Fnd[%d] %s:%s\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path);
         LOG_MSG(InfoText);
 				if (DEV_LCD == OneWireList[Id].DevType) {  // Initiate all 1W LCDs
-	        Init1WLCD(OneWireList[Id].Id);
+	        Set1WLCDOn(OneWireList[Id].Id);   // Turn Display ON
+	        Set1WLCDBlkOn(OneWireList[Id].Id); // Turn backlight ON
 					sprintf(InfoText, "%s initiated\r\n", OneWireList[Id].SensName);
 					LOG_MSG(InfoText);
 				}

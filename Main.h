@@ -13,6 +13,8 @@
 #define MAIN_PIPE			"/tmp/mainpipe"
 #define TIMO_PIPE			"/tmp/timopipe"
 
+#define LCDBlkOnTimerVal  3  // No of minutes before turning off inactive backlight
+
 #define MAX_WATER_LEVEL		180
 #define MAX_DIESEL_LEVEL	280
 
@@ -44,6 +46,8 @@
 // Search paramaters to get CPU info
 #define SEARCH          	"model name"   /* Changed from CPU to this in uClinux R8 system */
 #define PATH_CPUINFO    	"/proc/cpuinfo"
+
+
 
 enum ProcTypes_e {BF533, BF537, RPI, BB, HOSTENV};
 /* Declaration of types */
@@ -170,6 +174,7 @@ struct ProcState_s {
   float         ADDieselLevel;
   float         DieselLevel;
   float         UpdateInterval;
+		char										LCDBlkOnTimer; // Time in minutes until backligt is turned off
   struct fd_s {  // Filedescriptors
     int           lcd;
     int           timo;
