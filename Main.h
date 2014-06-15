@@ -13,7 +13,7 @@
 #define MAIN_PIPE			"/tmp/mainpipe"
 #define TIMO_PIPE			"/tmp/timopipe"
 
-#define LCDBlkOnTimerVal  3  // No of minutes before turning off inactive backlight
+#define LCDBlkOnTimerVal  60  // No of minutes before turning off inactive backlight
 
 #define MAX_WATER_LEVEL		180
 #define MAX_DIESEL_LEVEL	280

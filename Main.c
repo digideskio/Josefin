@@ -208,7 +208,7 @@ int    main(int argc, char *argv[]) {
    switch(Msg->SigNo) {
       case SIGMinuteTick:  // Wait until backlight should be turned off
   						REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
-printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
+//printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
         if (ProcState.LCDBlkOnTimer <= 0) 
 										Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
 								else
