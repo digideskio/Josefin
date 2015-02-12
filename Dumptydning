@@ -1,0 +1,3 @@
+bfin-uclinux-objdump -S Josefin.gdb 
+
+Listar högnivå med assembler Jmf med dump info (Josefin + 0x93cc)
