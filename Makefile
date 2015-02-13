@@ -45,6 +45,7 @@ CFLAGS-HOST += -DOWLCD_PRESENT
 CFLAGS-RPI += -I$(WIRINGPILIB)
 
 LDLIBS-RPI += -lwiringPi
+LDLIBS-RPI += -lcurl
 
 #$(EXEC): $(OBJS)
 #$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))

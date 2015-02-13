@@ -833,7 +833,7 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
 void   ByteportReport(struct ProcState_s *PState) {
 	CURL *curl;
   CURLcode res;
-	sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=%f3.2", PState->OutTemp);
+	sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=%5.1f", PState->OutTemp);
 		printf(InfoText); printf("\r\n");
   curl = curl_easy_init();
   if(curl) {
