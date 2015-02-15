@@ -73,7 +73,7 @@ void   QuitProc(void);
 // Define global variables
 char Once=0;
 
-char    InfoText[300];
+char    InfoText[500];
 char    LCDText[100];// Holds the text currently displayed on LCD, with some extra bytes so we don't overwrite..
 char    ProtectionText[100]; // A test to see if problem disappeares
 long long TM2Temp, TM1Temp, TM1AD, TM2AD, TMLCD1, TMLCD2;
@@ -200,6 +200,7 @@ int    main(int argc, char *argv[]) {
  // REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADInt", SIGInitMeasADInt, 2 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExt", SIGInitMeasADExt, 10 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitBlkOn", SIGMinuteTick, 60 Sec); 
+	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 10 Sec); // To be adjusted
 	sprintf(InfoText, "Josefin started Ver:  %s\n", __DATE__);
   LOG_MSG(InfoText);
   while (TRUE) {
@@ -209,6 +210,10 @@ int    main(int argc, char *argv[]) {
 		Msg = Buf;
  //if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
    switch(Msg->SigNo) {
+		  case SIGByteportReportTick:  // Send report to Byteport 20150214
+				ByteportReport(&ProcState); /* Report to Byteport	*/	
+  			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 10 Sec); // To be adjusted 				
+      break;
       case SIGMinuteTick:  // Wait until backlight should be turned off
   						REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
 //printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
@@ -216,7 +221,7 @@ int    main(int argc, char *argv[]) {
 										Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
 								else
 										ProcState.LCDBlkOnTimer--;	
-				ByteportReport(&ProcState); /* Report to Byteport	*/					
+				//ByteportReport(&ProcState); /* Report to Byteport	*/					
       break;
 						case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
@@ -833,19 +838,29 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
 void   ByteportReport(struct ProcState_s *PState) {
 	CURL *curl;
   CURLcode res;
-	sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=%5.1f", PState->OutTemp);
-		printf(InfoText); printf("\r\n");
+	char URL[100]; 
+	sprintf(URL,	"http://api.byteport.se");
+
+
+	//sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=%5.1f", PState->OutTemp);
+	sprintf(InfoText, "/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=-12.6");
   curl = curl_easy_init();
   if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, InfoText);
+
+	curl_easy_setopt(curl, CURLOPT_URL, URL);
+	printf("1\r\n");
     /* example.com is redirected, so we tell libcurl to follow redirection */ 
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
- 
+   // curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long) strlen(InfoText));
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, InfoText);
+		curl_easy_setopt(curl, CURLOPT_HTTPGET,1L);
     /* Perform the request, res will get the return code */ 
     res = curl_easy_perform(curl);
     /* Check for errors */ 
     if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+      printf(stderr, "curl_easy_perform() failed: %s\n",
               curl_easy_strerror(res));
  
     /* always cleanup */ 
