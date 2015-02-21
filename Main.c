@@ -212,7 +212,7 @@ int    main(int argc, char *argv[]) {
    switch(Msg->SigNo) {
 		  case SIGByteportReportTick:  // Send report to Byteport 20150214
 				ByteportReport(&ProcState); /* Report to Byteport	*/	
-  			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 10 Sec); // To be adjusted 				
+  			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 60 Sec); // To be adjusted 				
       break;
       case SIGMinuteTick:  // Wait until backlight should be turned off
   						REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
@@ -838,41 +838,29 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
 void   ByteportReport(struct ProcState_s *PState) {
 	CURL *curl;
   CURLcode res;
-	char URL[100]; 
-	sprintf(URL,	"http://api.byteport.se");
-
-
-	//sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=%5.1f", PState->OutTemp);
-	sprintf(InfoText, "/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54@OutTemp=-12.6");
+	
+	sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54");
+	sprintf(InfoText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", InfoText,
+		PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
+	//"&RefrigTemp=%-5.1f&DieselLevel=%-5.1f&WaterLevel=%-5.1f&BoxTemp=%-5.1f&BatVoltS=%-5.1f&BatVoltF=%-5.1f",
+	  //PState->OutTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel,  PState->BoxTemp, PState->BatVoltS, PState->BatVoltF);
   curl = curl_easy_init();
   if(curl) {
-
-	curl_easy_setopt(curl, CURLOPT_URL, URL);
-	printf("1\r\n");
-    /* example.com is redirected, so we tell libcurl to follow redirection */ 
-   // curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-		
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long) strlen(InfoText));
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, InfoText);
-		curl_easy_setopt(curl, CURLOPT_HTTPGET,1L);
-    /* Perform the request, res will get the return code */ 
-    res = curl_easy_perform(curl);
-    /* Check for errors */ 
-    if(res != CURLE_OK)
-      printf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
- 
-    /* always cleanup */ 
-    curl_easy_cleanup(curl);
-  }
+			curl_easy_setopt(curl, CURLOPT_URL, InfoText);
+			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+				
+			/* Perform the request, res will get the return code */ 
+			res = curl_easy_perform(curl);
+			/* Check for errors */ 
+			if(res != CURLE_OK)
+				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 
+				/* always cleanup */ 
+				curl_easy_cleanup(curl);
+		}
   return 0; 
-  
-  
-  
-  
-
 }
+
 void   InitProc(struct ProcState_s *PState) {
   
   int ret, rc;
