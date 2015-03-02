@@ -4,7 +4,7 @@
  *      Ver  	Date    	Name Description
  *        		20061124 	AGY  Created.
  *      			20130219 	AGY  New version for RaspberryPi. Slight mod needed! 
- *      w			20140214 	AGY  New version adding BeagleBone support 
+ *      			20140214 	AGY  New version adding BeagleBone support 
  * 			W			20150212  AGY  Added Byteport support (Curl function to report to Byteport cloud, from iGW)
  *
  *************************************************************************/
@@ -73,7 +73,7 @@ void   QuitProc(void);
 // Define global variables
 char Once=0;
 
-char    InfoText[500];
+char    InfoText[300];
 char    LCDText[100];// Holds the text currently displayed on LCD, with some extra bytes so we don't overwrite..
 char    ProtectionText[100]; // A test to see if problem disappeares
 long long TM2Temp, TM1Temp, TM1AD, TM2AD, TMLCD1, TMLCD2;
@@ -379,7 +379,7 @@ int    main(int argc, char *argv[]) {
 							FQueue[0].ADBatVoltF  = Msg->SensorResp.Val[2];						
 							Msg->SensorResp.Val[0] = 0; 							
 							Msg->SensorResp.Val[1] = 0; 							
-							Msg->SensorResp.Val[2] = 0; 							
+							Msg->SensorResp.Val[2] = 0;  							
 							
 							// Calculate mean value of all elem in filter queue
 							for (Idx = 0; Idx < NO_OF_ELEM_IN_FILTERQUEU; Idx++) {
@@ -438,10 +438,13 @@ int    main(int argc, char *argv[]) {
 // Turn on backlight on Display when a button is pushed.
       case SIGOpButOn:
 //if  (DbgTest == 1) {printf("3: %d\r\n", Msg->SigNo);usleep(200000);}
-	 						ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
-								Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
-        OpButPressed(&ProcState);
-        LCDDisplayUpdate(&ProcState);
+				if (ProcState.LCDBlkOnTimer <= 0) { // If Display OFF, Set timer and turn on Display-nothing else
+	 				ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+					Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
+				} else { // Execute button pressed
+					OpButPressed(&ProcState);
+					LCDDisplayUpdate(&ProcState);
+				}
 	    break;
       case SIGLftButOn:
 	//printf("Left button presssed Msg: %s\n");
@@ -834,30 +837,36 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
    printf("Severe error...\r\n"); 
 
 }  // BuildBarText
-
 void   ByteportReport(struct ProcState_s *PState) {
-	CURL *curl;
-  CURLcode res;
+	CURL 			 *curl;
+  CURLcode 		res;
+	char 				CurlText[500];
 	
-	sprintf(InfoText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54");
-	sprintf(InfoText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", InfoText,
-		PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
-	//"&RefrigTemp=%-5.1f&DieselLevel=%-5.1f&WaterLevel=%-5.1f&BoxTemp=%-5.1f&BatVoltS=%-5.1f&BatVoltF=%-5.1f",
-	  //PState->OutTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel,  PState->BoxTemp, PState->BatVoltS, PState->BatVoltF);
-  curl = curl_easy_init();
+	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54");
+	
+	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
+						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
+	 curl = curl_easy_init();
   if(curl) {
-			curl_easy_setopt(curl, CURLOPT_URL, InfoText);
+			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
 			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-			curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
 				
 			/* Perform the request, res will get the return code */ 
-			res = curl_easy_perform(curl);
+			
+			
+			//LOG_MSG(CurlText); 
+			printf("Curl %d: ", strlen(CurlText));
+			
+			res = curl_easy_perform(curl); printf(" :\r\n");
 			/* Check for errors */ 
 			if(res != CURLE_OK)
 				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 
 				/* always cleanup */ 
 				curl_easy_cleanup(curl);
-		}
+	} else {
+		printf(stderr, "curl_easy_init() failed: %d\n", curl);
+	}
   return 0; 
 }
 
@@ -878,7 +887,7 @@ void   InitProc(struct ProcState_s *PState) {
   ProcessorType = HOSTENV;
   LOG_MSG("HOST defined\n");
 #else
-  sprintf(InfoText, "Unknown processort type defined: %d \n", ProcessorType);
+  sprintf(InfoText, "Unknown processor type defined: %d \n", ProcessorType);
   CHECK(FALSE, InfoText);
 #endif  
      
