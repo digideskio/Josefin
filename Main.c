@@ -850,13 +850,13 @@ void   ByteportReport(struct ProcState_s *PState) {
   if(curl) {
 			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
 			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
 				
 			/* Perform the request, res will get the return code */ 
 			
 			
 			//LOG_MSG(CurlText); 
-			printf("Curl %d: ", strlen(CurlText));
+//printf("Curl %d: ", strlen(CurlText));
 			
 			res = curl_easy_perform(curl); printf(" :\r\n");
 			/* Check for errors */ 
