@@ -387,7 +387,7 @@ int    main(int argc, char *argv[]) {
 
 								Msg->SensorResp.Val[0] += FQueue[Idx].ADDiesel; 							
 								Msg->SensorResp.Val[1] += FQueue[Idx].ADWater; 							
-								Msg->SensorResp.Val[2] += FQueue[Idx].ADBatVoltF; 							
+								Msg->SensorResp.Val[2] += FQueue[Idx].ADBatVoltF; 		 					
 							}	// for
 							//printf("\r\n");
 							Msg->SensorResp.Val[0] = Msg->SensorResp.Val[0]/(NO_OF_ELEM_IN_FILTERQUEU); 							
@@ -858,7 +858,7 @@ void   ByteportReport(struct ProcState_s *PState) {
 			//LOG_MSG(CurlText); 
 //printf("Curl %d: ", strlen(CurlText));
 			
-			res = curl_easy_perform(curl); printf(" :\r\n");
+			res = curl_easy_perform(curl); // printf(" :\r\n");
 			/* Check for errors */ 
 			if(res != CURLE_OK)
 				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 

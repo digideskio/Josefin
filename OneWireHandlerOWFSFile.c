@@ -326,7 +326,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 			fclose(fp);	
 			//Status = TRUE;  // I printed the sequence to get start adress, see for loop below
 			AD[0] = ConvLevelAD * atof(&line[3]);
-			printf("%s :AD0 %10.6f \r\n", line, AD[0]);
+			//printf("%s :AD0 %10.6f \r\n", line, AD[0]);
 
 			// Continue by reading Channel B
 			if((fp = fopen(AddrChB, "r")) == NULL)  {
@@ -343,7 +343,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 					fclose(fp);	
 					Status = TRUE;  // I printed the sequence to get start adress, see for loop below
 					AD[1] = ConvLevelAD * atof(&line[3]);
-					printf("%s :AD1 %10.6f \r\n", line, AD[1]);
+					//printf("%s :AD1 %10.6f \r\n", line, AD[1]);
 				}
 			}
 		
@@ -362,7 +362,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 					fclose(fp);	
 					Status = TRUE;  // I printed the sequence to get start adress, see for loop below
 					AD[2] = ConvLevelAD * atof(&line[3]);
-					printf("%s :AD2 %10.6f \r\n", line, AD[2]);
+					//printf("%s :AD2 %10.6f \r\n", line, AD[2]);
 					Status = TRUE; // All sensors read correctly
 				}
 			}
