@@ -840,6 +840,7 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
 
 }  // BuildBarText
 void   ByteportReport(struct ProcState_s *PState) {
+	
 	CURL 			 *curl;
   CURLcode 		res;
 	char 				CurlText[500];
@@ -869,6 +870,7 @@ void   ByteportReport(struct ProcState_s *PState) {
 	} else {
 		printf(stderr, "curl_easy_init() failed: %d\n", curl);
 	}
+	
   return 0; 
 }
 

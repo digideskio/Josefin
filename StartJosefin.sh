@@ -7,7 +7,7 @@ owfs -uall --usb_regulartime --allow_other /mnt/1wire/
 
 # usb_regulartime used to handle LCD-display
 echo "Start Application Josefin"
-/home/root/Josefin/Josefin&
+/root/Josefin/Josefin&
 
 # Carry out specific functions when asked to by the system
  
