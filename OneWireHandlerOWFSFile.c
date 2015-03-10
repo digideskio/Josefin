@@ -339,7 +339,11 @@ char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, c
 			//	LOG_MSG(InfoText);
 			fclose(fp);	
 			AD[0] = ConvLevelAD * atof(&line[3]);
-			//printf("%s :AD0 %10.6f \r\n", line, AD[0]);	
+			AD[1] = ConvLevelAD * atof(&line[13]);
+			AD[2] = ConvLevelAD * atof(&line[26]);
+			AD[3] = ConvLevelAD * atof(&line[40]);
+			//sprintf(InfoText, "%s :AD0 %10.6f AD1 %10.6f AD2 %10.6f AD3 %10.6f\r\n", line, AD[0], AD[1], AD[2], AD[3]);	
+			//LOG_MSG(InfoText);
 		} 
 	}
 	return Status;
