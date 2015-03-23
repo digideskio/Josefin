@@ -306,7 +306,7 @@ char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, c
 	
   // Set default values
 	Status = FALSE;
-	ADReadIdx = 3;  // Set number of re-tries at AD read out
+	ADReadIdx = 6;  // Set number of re-tries at AD read out
   for (idx = 0; idx < 4; idx++)
     AD[idx] = SENS_DEF_VAL;
   sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
@@ -314,7 +314,7 @@ char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, c
 
 	// read Channel A
 	if((fp = fopen(Address, "r")) == NULL)  {
-		sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, SensorPath);
+		sprintf(InfoText, "ERROR: %s %d Cannot open file %s \n", strerror(errno), errno, SensorPath);
 		CHECK(FALSE, InfoText);
 		// fclose(fp); Don't close, fp == NULL!!
 		return Status;
@@ -324,9 +324,9 @@ char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, c
 				ADReadIdx = 0; // Break while loop
 				Status = TRUE;
 			} else	{			
-				usleep(500);  // Wait and try again	
-				sprintf(InfoText, "Read AD again %x %s \n", fp, SensorPath);
-   			LOG_MSG(InfoText);
+				usleep(5000);  // Wait and try again	
+				//sprintf(InfoText, "%d: Read AD again %x %s \n", (6- ADReadIdx),fp, SensorPath);
+   			//LOG_MSG(InfoText);
 				ADReadIdx--;
 			}
 		}	// End while
