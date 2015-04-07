@@ -30,7 +30,7 @@ char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
 char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
-char						ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
+char						ReadADALL(float *AD, float Factor, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
 char						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex);
 int 						A2HexByte(char A1, char A2);
 int 						ToHex(char ch);
@@ -121,7 +121,7 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
 
             case DEV_DS2450:  // AD-sensor
            /*   READ_TIMER(TM1);  */
-								if (!(ReadADALL(AD, fp, DevType, OneWireList[Id].Path, ScrPad))) { //Test 
+								if (!(ReadADALL(AD, OneWireList[Id].Data, fp, DevType, OneWireList[Id].Path, ScrPad))) { //Test 
 							//	if (!(ReadAD(AD, fp, DevType, OneWireList[Id].Path, ScrPad))) { // If not present then..
                	OneWireList[Id].Present = FALSE; 
                 for (Idx = 0; Idx < 4; Idx++)
@@ -291,9 +291,11 @@ char 						Scan4Sensors(void) {
         OneWireList[Id].Present = TRUE;
         OneWireList[Id].Id  = Id;
         strncpy(OneWireList[Id].SensName, ExpOneWireList[Idx].SensName, 16);
-        OneWireList[Id].DevType = ExpOneWireList[Idx].DevType;
         strncpy(OneWireList[Id].Path, ExpOneWireList[Idx].Path, 100); 
-        sprintf(InfoText, "Fnd[%d] %s:%s\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path);
+        OneWireList[Id].DevType = ExpOneWireList[Idx].DevType;
+				OneWireList[Id].Data    = ExpOneWireList[Idx].Data;
+
+        sprintf(InfoText, "Fnd[%d] %s:%s Fct:%3.2f\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
         LOG_MSG(InfoText);
 				if (DEV_LCD == OneWireList[Id].DevType) {  // Initiate all 1W LCDs
 				  ProcState.DevLCDDefined = TRUE;
@@ -309,7 +311,7 @@ char 						Scan4Sensors(void) {
     }
   } // End for
 }
-char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
+char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
   int 						idx;
 	char   					ADReadIdx;
   char						Status;
@@ -324,8 +326,8 @@ char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, c
   for (idx = 0; idx < 4; idx++)
     AD[idx] = SENS_DEF_VAL;
   sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
-	#define ConvLevelAD   5   // Chose between 2.55 and 5.10. Change reading accordingly (volt.A or volt2.A )
-
+ // printf ("AD Fact: %3.2f %s\r\n", ConvLevelAD, SensorPath);
+	
 	// read Channel A
 	if((fp = fopen(Address, "r")) == NULL)  {
 		sprintf(InfoText, "ERROR: %s %d Cannot open file %s \n", strerror(errno), errno, SensorPath);
@@ -356,7 +358,7 @@ char			ReadADALL(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, c
 			AD[1] = ConvLevelAD * atof(&line[13]);
 			AD[2] = ConvLevelAD * atof(&line[26]);
 			AD[3] = ConvLevelAD * atof(&line[40]);
-			//sprintf(InfoText, "%s :AD0 %10.6f AD1 %10.6f AD2 %10.6f AD3 %10.6f\r\n", line, AD[0], AD[1], AD[2], AD[3]);	
+			//sprintf(InfoText, "Fact: %f %s :AD0 %10.6f AD1 %10.6f AD2 %10.6f AD3 %10.6f\r\n", ConvLevelAD, line, AD[0], AD[1], AD[2], AD[3]);	
 			//LOG_MSG(InfoText);
 		} 
 	}
@@ -371,7 +373,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
   unsigned int 		lastcrc16;
   unsigned char		ScrPad[24]; 					
   char	        	AddrChA[100], AddrChB[100], AddrChC[100], AddrChD[100], line[80];
-  float						templong; 
+  float						templong, ConvLevelAD;  // Note, see ReadAD all for use of ConvLevel, read from OneWireList..7 Apr 2015
 	
   // Set default values
 	Status = FALSE;
@@ -382,7 +384,6 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 	sprintf(AddrChB, "%s%s%s", OWFS_MP, SensorPath, "/volt.B");
 	sprintf(AddrChC, "%s%s%s", OWFS_MP, SensorPath, "/volt.C");
 	sprintf(AddrChD, "%s%s%s", OWFS_MP, SensorPath, "/volt.D");
-#define ConvLevelAD   5   // Chose between 2.55 and 5.10. Change reading accordingly (volt.A or volt2.A )
 
 	// read Channel A
 	if((fp = fopen(AddrChA, "r")) == NULL)  {

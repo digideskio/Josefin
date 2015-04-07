@@ -33,7 +33,7 @@
  
 extern char 	          Set1WLCDOn(int LCD_Id); // Turn Display ON
 extern char 	          Set1WLCDBlkOn(int LCD_Id); // Turn backlight ON
-extern char												Set1WLCDBlkOff(int LCD_Id); // Turn backlight OFF 
+extern char							Set1WLCDBlkOff(int LCD_Id); // Turn backlight OFF 
 
 struct OneWireList_s {
 	 char						  Present; // Boolean indicating if sensor exists or not
@@ -42,7 +42,8 @@ struct OneWireList_s {
    char             SensName[16];
    unsigned char    DevType;
    char             Path[55];
-   float						Val[4];   // Read values	
+   float						Val[4];   // Read values
+	 float						Data;  // Normally not used but for AD for ex you can select Conversion factor
 };
 
 
@@ -51,6 +52,7 @@ struct ExpOneWireList_s {
    char             SensName[16];
    unsigned char    DevType;
    char             Path[55];	
+	 float						Data;  // Normally not used but for AD for ex you can select Conversion factor
 };
 
  static const struct ExpOneWireList_s ExpOneWireList[] = {
@@ -68,56 +70,56 @@ struct ExpOneWireList_s {
       /************************************************************/
  
  
-      {0, "T-ute ", 0x28,  "28.CDEBF6000000"},	// Inne, utegivare på ute-väggen    
-			{0, "T-ute ", 0x28,  "28.1ED0B7010000"},	// Inne
+      {0, "T-ute ", 0x28,  "28.CDEBF6000000", 0},	// Inne, utegivare på ute-väggen    
+			{0, "T-ute ", 0x28,  "28.1ED0B7010000", 0},	// Inne
 			
-      {0, "T-ute ", 0x28,  "45000000F7140A28"},  // Ute-givare båt    
-      {0, "T-ute ", 0x28,  "28.0A14F7000000"},  // Ute-givare båt    
-			{0, "T-ute ", 0x28,  "80000000F7BAE628"},  // Inne på board		
-			{0, "T-ute ", 0x28,  "28.E7C415010000"},  // USB-OFS Inne, ny own pwrd
+      {0, "T-ute ", 0x28,  "45000000F7140A28", 0},  // Ute-givare båt    
+      {0, "T-ute ", 0x28,  "28.0A14F7000000", 0},  // Ute-givare båt    
+			{0, "T-ute ", 0x28,  "80000000F7BAE628", 0},  // Inne på board		
+			{0, "T-ute ", 0x28,  "28.E7C415010000", 0},  // USB-OFS Inne, ny own pwrd
 
-      {1, "T-box ", 0x10,  "36000800B62E2A10"},  // HA7S Båt-Box     
-			{1, "T-box ", 0x10,  "10.2A2EB6000800"},   // USB-OWFS Båt-Box
-      {1, "T-box ", 0x28,  "28.7EF3FE000000"},	 // Inne test, ny Own pwr
-      {1, "T-box ", 0x28,  "21000001B8098028"},	// Inne test		 
-      {1, "T-box ", 0x28,  "00000115fedb28"},	// Inne test
+      {1, "T-box ", 0x10,  "36000800B62E2A10", 0},  // HA7S Båt-Box     
+			{1, "T-box ", 0x10,  "10.2A2EB6000800", 0},   // USB-OWFS Båt-Box
+      {1, "T-box ", 0x28,  "28.7EF3FE000000", 0},	 // Inne test, ny Own pwr
+      {1, "T-box ", 0x28,  "21000001B8098028", 0},	// Inne test		 
+      {1, "T-box ", 0x28,  "00000115fedb28", 0},	// Inne test
 			
-      {2, "T-kyl ", 0x28,  "C6000000C7A59128"}, // HA7S Båt-kyl
-      {2, "T-kyl ", 0x28,  "28.91A5C7000000"},  // USB-OWFS Båt-kyl
-      {2, "T-kyl ", 0x28,  "19000000F6EBCD28"},	// Inne test   
-			{2, "T-kyl ", 0x10,  "370000003478A710"},	// Inne test	
-			{2, "T-kyl ", 0x28,  "28.5BE8C7000000"},	// Inne test
+      {2, "T-kyl ", 0x28,  "C6000000C7A59128", 0}, // HA7S Båt-kyl
+      {2, "T-kyl ", 0x28,  "28.91A5C7000000", 0},  // USB-OWFS Båt-kyl
+      {2, "T-kyl ", 0x28,  "19000000F6EBCD28", 0},	// Inne test   
+			{2, "T-kyl ", 0x10,  "370000003478A710", 0},	// Inne test	
+			{2, "T-kyl ", 0x28,  "28.5BE8C7000000", 0},	// Inne test
 
-      {3, "T-VV  ", 0x28,  "000001b8098028"},
-      {3, "T-VV  ", 0x28,  "B4000001B7D01E28"}, // Inne
-			{3, "T-VV  ", 0x10,  "0F000800AAA2A410"}, // VV-Båt
-	/*   //{3, "Temp frys", 0x28, "000000f7140a28"},	
-      {4, "AD Int   ", 0x20,  "00000009a97f20"}, // AD Battery 1 & 2
-      {4, "AD Int   ", 0x20,  "00000009afba20"},
-      {4, "AD Int   ", 0x20,  "00000009c78520"}, Not used 090507, AGY
+      {3, "T-VV  ", 0x28,  "000001b8098028", 0},
+      {3, "T-VV  ", 0x28,  "B4000001B7D01E28", 0}, // Inne
+			{3, "T-VV  ", 0x10,  "0F000800AAA2A410", 0}, // VV-Båt
+	/*   //{3, "Temp frys", 0x28, "000000f7140a28", 0},	
+      {4, "AD Int   ", 0x20,  "00000009a97f20", 0}, // AD Battery 1 & 2
+      {4, "AD Int   ", 0x20,  "00000009afba20", 0},
+      {4, "AD Int   ", 0x20,  "00000009c78520", 0}, Not used 090507, AGY
 */
-      {5, "AD Ext", 0x20,  "20.CF3714000000"}, // USB-OWFS Ny-version Inne AD Water & diesel
-			{5, "AD Ext", 0x20,  "20.EF4806000000"}, // AD Water & diesel
-			{5, "AD Ext", 0x20,  "000000094c9420"}, //  
-      {5, "AD Ext", 0x20,  "20.9149650000000"},  // AD i båt     
-			{5, "AD Ext", 0x20,  "20.915406000000"},  // USB-OWFS AD i båt
-			{5, "AD Ext", 0x20,  "20.626A060000000"}, // AD ext inne
+      {5, "AD Ext", 0x20,  "20.CF3714000000", 5}, // USB-OWFS Ny-version Inne AD Water & diesel, factor 5
+			{5, "AD Ext", 0x20,  "20.EF4806000000", 5}, // AD Water & diesel
+			{5, "AD Ext", 0x20,  "000000094c9420", 5}, //  
+      {5, "AD Ext", 0x20,  "20.9149650000000", 3.14},  // AD i båt     
+			{5, "AD Ext", 0x20,  "20.915406000000", 3.14},  // USB-OWFS AD i båt
+			{5, "AD Ext", 0x20,  "20.626A06000000", 3.14}, // AD ext inne (på trä kortet)
 
-//    {2, "Temp kort" ,0x28,  "000000f7bae628"},
-//    {2, "Temp kort", 0x28,  "000000fef37e28"},
-//    {2, "Temp kort", 0x28,  "00000115bfc028"},
+//    {2, "Temp kort" ,0x28,  "000000f7bae628", 0},
+//    {2, "Temp kort", 0x28,  "000000fef37e28", 0},
+//    {2, "Temp kort", 0x28,  "00000115bfc028", 0},
 
-      {6, "T-hav ", 0x28,  "000000c7e85b28"}, // Tveksam funktion?
-      {6, "T-hav ", 0x22,  "0000001aa55922"}, // Gammal givare, bytes
-      {6, "T-hav ", 0x22,  "0000000017C69F22"}, // HA7S BÅt-Gammal givare, bytes
-      {6, "T-hav ", 0x22,  "22.9FC61700000"}, // USB-OWFS BÅt-Gammal givare, bytes
-      {6, "T-hav ", 0x28,  "80000000f6ebcd28"}, // Inne
+      {6, "T-hav ", 0x28,  "000000c7e85b28", 0}, // Tveksam funktion?
+      {6, "T-hav ", 0x22,  "0000001aa55922", 0}, // Gammal givare, bytes
+      {6, "T-hav ", 0x22,  "0000000017C69F22", 0}, // HA7S BÅt-Gammal givare, bytes
+      {6, "T-hav ", 0x22,  "22.9FC61700000", 0}, // USB-OWFS BÅt-Gammal givare, bytes
+      {6, "T-hav ", 0x28,  "80000000f6ebcd28", 0}, // Inne
 			
-      {7, "T-Vtn ", 0x28,  "80000000f6ebcd28"}, // Inne  
+      {7, "T-Vtn ", 0x28,  "80000000f6ebcd28", 0}, // Inne  
 
-			{8, "LCD-1 ", 0xFF,  "420001000007EBFF"},// Inne LCD-1 HA7S format
-      {8, "LCD-1 ", 0xFF,  "FF.EB0700000100"}, // Inne LCD-1 BIG OWFS format			  	
-      {8, "LCD-1 ", 0xFF,  "FF.750800000100"}  // Inne LCD-2 BIG OWFS format
+			{8, "LCD-1 ", 0xFF,  "420001000007EBFF", 0},// Inne LCD-1 HA7S format
+      {8, "LCD-1 ", 0xFF,  "FF.EB0700000100", 0}, // Inne LCD-1 BIG OWFS format			  	
+      {8, "LCD-1 ", 0xFF,  "FF.750800000100", 0}  // Inne LCD-2 BIG OWFS format
 
     };
 		
