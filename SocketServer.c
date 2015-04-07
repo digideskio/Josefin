@@ -39,7 +39,7 @@ void * SockServer(enum ProcTypes_e ProcType) {
     memset(recvBuff, '0',sizeof(recvBuff));
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)    {
         printf("\n Error : Could not create socket \n");
-        return 1;
+        return (void *) 1;
     } 
 
     memset(&serv_addr, '0', sizeof(serv_addr)); 
@@ -64,7 +64,7 @@ void * SockServer(enum ProcTypes_e ProcType) {
     bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
 
     listen(listenfd, 10); 
-		Msg = Buf;
+		Msg = (void *) Buf;
 		ComBuf = (struct ComBuf_s *) malloc(sizeof(struct ComBuf_s));
     while (TRUE) {	
 			ExitConn = FALSE;

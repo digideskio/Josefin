@@ -100,7 +100,7 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 
 
 		//Idx++;
-    Msg = Buf; // Set ptr to receiving buffer
+    Msg = (void *) Buf; // Set ptr to receiving buffer
     usleep(20000); // Timeout between each scan of keyboard, to be adjusted
 #ifdef RPI_DEFINED
 // Check if Right button pressed	

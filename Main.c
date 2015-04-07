@@ -186,12 +186,14 @@ int    main(int argc, char *argv[]) {
 	//ret = write(ProcState.fd.lcd, LCDText, 80);
 	// printf("LCD Write: %d bytes\r\n", ret);
 #endif
-#ifdef OWLCD_PRESENT
+
+if (ProcState.fd.lcd != 0) {  // If LCD attached
 	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
 	LCD1W_WRITE(LCD1, 3, &LCDText[Line2]);
 	LCD1W_WRITE(LCD1, 2, &LCDText[Line3]);
 	LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);	
-#endif 
+}
+	
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTRefrig", SIGInitMeasTempRefrig, 3 Sec); 
@@ -208,7 +210,7 @@ int    main(int argc, char *argv[]) {
     WAIT(ProcState.fd.own, Buf, sizeof(union SIGNAL));
 //if (Msg->SigNo == 10) {DbgTest = 1;}
 		
-		Msg = Buf;
+		Msg = (void *) Buf;
  //if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
    switch(Msg->SigNo) {
 		  case SIGByteportReportTick:  // Send report to Byteport 20150214
@@ -216,15 +218,17 @@ int    main(int argc, char *argv[]) {
   			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 60 Sec); // To be adjusted 				
       break;
       case SIGMinuteTick:  // Wait until backlight should be turned off
-  						REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
+  			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
 //printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
-        if (ProcState.LCDBlkOnTimer <= 0) 
-										Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
-								else
-										ProcState.LCDBlkOnTimer--;	
-				//ByteportReport(&ProcState); /* Report to Byteport	*/					
+				if (ProcState.fd.lcd != 0) {  // First check that we have a LCD attached
+					if (ProcState.LCDBlkOnTimer <= 0) 
+						Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
+					else
+						ProcState.LCDBlkOnTimer--;	
+				//ByteportReport(&ProcState); /* Report to Byteport	*/	
+				}
       break;
-						case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
+			case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
         Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
         Msg->SensorReq.Sensor = BOX_TEMP;
@@ -439,26 +443,28 @@ int    main(int argc, char *argv[]) {
 // Turn on backlight on Display when a button is pushed.
       case SIGOpButOn:
 //if  (DbgTest == 1) {printf("3: %d\r\n", Msg->SigNo);usleep(200000);}
-				if (ProcState.LCDBlkOnTimer <= 0) { // If Display OFF, Set timer and turn on Display-nothing else
-	 				ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
-					Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
-				} else { // Execute button pressed
-					OpButPressed(&ProcState);
-					LCDDisplayUpdate(&ProcState);
+				if (!ProcState.fd.lcd) {  // First check that we have a LCD attached
+					if (ProcState.LCDBlkOnTimer <= 0) { // If Display OFF, Set timer and turn on Display-nothing else
+						ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+						Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
+					} else { // Execute button pressed
+						OpButPressed(&ProcState);
+						LCDDisplayUpdate(&ProcState);
+					}
 				}
 	    break;
       case SIGLftButOn:
 	//printf("Left button presssed Msg: %s\n");
-	 						ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
-								Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
+	 			ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+				Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
         RghtButPressed(&ProcState);
 //        LftButPressed(&ProcState); // Due to problems reading Left/Right. Step always Right!!!
         LCDDisplayUpdate(&ProcState);
       break;
       case SIGRghtButOn:
 	//printf("Right button presssed \n");
-								ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
-								Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
+				ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
+				Set1WLCDBlkOn(LCD1);  // Turn on backlight on display
         RghtButPressed(&ProcState);
         LCDDisplayUpdate(&ProcState);
       break;
@@ -845,7 +851,7 @@ void   ByteportReport(struct ProcState_s *PState) {
   CURLcode 		res;
 	char 				CurlText[500];
 	
-	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/JosefinSim/?_key=b43cb5709b37ff3125195b54");
+	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/%s/?_key=b43cb5709b37ff3125195b54", ByteportDevice );
 	
 	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
 						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
@@ -871,7 +877,7 @@ void   ByteportReport(struct ProcState_s *PState) {
 		printf(stderr, "curl_easy_init() failed: %d\n", curl);
 	}
 	
-  return 0; 
+  return; 
 }
 
 void   InitProc(struct ProcState_s *PState) {
@@ -908,23 +914,23 @@ void   InitProc(struct ProcState_s *PState) {
   OPEN_PIPE(PState->fd.own, MAIN_PIPE, O_RDONLY|O_NONBLOCK);
   OPEN_PIPE(PState->fd.ToOwn, MAIN_PIPE, O_WRONLY);
 
-  ret= pthread_create( &PState->Thread.Timeout,  NULL, TimeoutHandler,  (void *) ProcessorType);
+  ret= pthread_create( &PState->Thread.Timeout,  NULL, (void *) TimeoutHandler,  (void *) ProcessorType);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Timout thread", strerror(errno)); 
   errno = 0;
   
-  ret = pthread_create( &PState->Thread.KbdBut,      NULL, RdKeyboardBut,      (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.KbdBut,      NULL, (void *) RdKeyboardBut,      (void *) ProcessorType);
   if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Kbd button thread", strerror(errno)); 
   errno = 0;
 
-  ret = pthread_create( &PState->Thread.OneWire,  NULL, OneWireHandler,  (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.OneWire,  NULL, (void *) OneWireHandler,  (void *) ProcessorType);
   if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "OneWire thread", strerror(errno)); 
   errno = 0;
 
-  ret = pthread_create( &PState->Thread.WDog,     NULL, Watchdog,        (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.WDog,     NULL, (void *) Watchdog,        (void *) ProcessorType);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Watchdog thread", strerror(errno)); 
   errno = 0;
 
-	ret = pthread_create( &PState->Thread.SockServ,     NULL, SockServer,        (void *) ProcessorType);
+	ret = pthread_create( &PState->Thread.SockServ,     NULL, (void *) SockServer,        (void *) ProcessorType);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Socket server", strerror(errno)); 
   errno = 0;
 
@@ -949,7 +955,7 @@ void   QuitProc(void) { // Read current timestamp
  //pthread_cancel(ProcState.Thread.Timeout);
  //pthread_cancel(ProcState.Thread.Kbd);
  //pthread_cancel(ProcState.Thread.OneWire);
- pthread_exit(ProcState.Thread.WDog);
+ pthread_exit((void *) ProcState.Thread.WDog);
  remove(KBD_PIPE);
  remove(ONEWIRE_PIPE);	
  remove(MAIN_PIPE);

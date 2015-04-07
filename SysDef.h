@@ -134,10 +134,10 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
 
 #define  LOG_MSG(a)              {printf("%s : LOG %s %d %s", now(), __FILE__, __LINE__, a);}
 
-// Requets timeout REQ_TIMEOUT(fd_timo, fd_own, Client name, Signal, DeltaTime)
+// Request timeout REQ_TIMEOUT(fd_timo, fd_own, Client name, Signal, DeltaTime)
 #define	 REQ_TIMEOUT(a, b, c, d, e) {union SIGNAL				*zz_Msg; \
                                  unsigned char zz_Buf[sizeof(union SIGNAL)];\
-                                 zz_Msg = zz_Buf;\
+                                 zz_Msg = (void *) zz_Buf;\
                                  zz_Msg->SigNo = SIGTimoReq;\
                                  zz_Msg->Timo.Client_fd = b;\
                                  strcpy(zz_Msg->Timo.ClientName, c);\
@@ -241,7 +241,7 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
 #define  SIGInitMeasADInt       (46)  // Initiate measurments from AD sensors
 #define  SIGInitMeasADExt       (47)  // Initiate measurments from AD sensors
 #define  SIGInitMeasTempHW      (48)  // Initiate measurments from Temperature sensors
-#define  SIGServCmdReq	         (49)  // Server command
-#define  SIGMinuteTick	         (50)  // Minute tick counter, for backlight off.
-#define  SIGByteportReportTick	 (51)  // Send report to Byteport timer
+#define  SIGServCmdReq	        (49)  // Server command
+#define  SIGMinuteTick	        (50)  // Minute tick counter, for backlight off.
+#define  SIGByteportReportTick	(51)  // Send report to Byteport timer
     

@@ -89,7 +89,8 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
   LOG_MSG("Started\n");
 	while(TRUE) {
 	  WAIT(fd_own, Buf, sizeof(union SIGNAL));
-		Msg = Buf;
+		Msg = (void *) Buf;
+		fp = NULL;
     switch(Msg->SigNo) {
      	case SIGReadSensorReq:
      	case SIGReadADReq:
@@ -174,48 +175,61 @@ char 						Set1WLCDOn(int LCD_Id) {
   int           fp;
 	char					Addr[100];
 
-	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/LCDon"); 
-  OPEN_PIPE(fp, Addr,	O_WRONLY|O_NONBLOCK);
-	write(fp, "1", 1); // Turn LCD On
-	if (errno != 0)
-		printf("Write	error LCDon: %s %d\r\n", strerror(errno), errno);
-	close(fp);
-	usleep(50000); // We need a delay before next command to LCD
-	close(fp);
-
+if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
+		sprintf(InfoText, "Err LCD%d Not initiated\r\n", LCD_Id);
+		LOG_MSG(InfoText);
+	}	else {
+  	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/LCDon"); 
+    OPEN_PIPE(fp, Addr,	O_WRONLY|O_NONBLOCK);
+  	write(fp, "1", 1); // Turn LCD On
+  	if (errno != 0)
+  		printf("Write	error LCDon: %s %d\r\n", strerror(errno), errno);
+  	close(fp);
+  	usleep(50000); // We need a delay before next command to LCD
+  	close(fp);
+	}
 }
 char 						Set1WLCDBlkOn(int LCD_Id) {
   int           fp;
 	char					Addr[100];
 
-	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
- OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
-	write(fp, "1", 1); // Turn backlight On
-	if (errno != 0)
-		 printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
-	usleep(5000);
-	close(fp);
-
+	if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
+		sprintf(InfoText, "Err LCD%d Backlight ON, not initiated\r\n", LCD_Id);
+		LOG_MSG(InfoText);
+	}	else {
+	  sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
+    OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
+	  write(fp, "1", 1); // Turn backlight On
+	  if (errno != 0)
+	  	 printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
+	  usleep(5000);
+	  close(fp);
+	}
 }
 char 						Set1WLCDBlkOff(int LCD_Id) {
   int           fp;
 	char					Addr[100];
 
-	sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
- OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
-	write(fp, "0", 1); // Turn backlight OFF
-	if (errno != 0)
-		 printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
-	usleep(5000);
-	close(fp);
+	if (!OneWireList[LCD_Id].Present) {  // Check that LCD attached
+		sprintf(InfoText, "Err LCD%d Backlight OFF, not initiated\r\n", LCD_Id);
+		LOG_MSG(InfoText);
+	}	else {
+	  sprintf(Addr, "%s%s%s", OWFS_MP, OneWireList[LCD_Id].Path,"/backlight"); 
+    OPEN_PIPE(fp, Addr, O_WRONLY|O_NONBLOCK);
+	  write(fp, "0", 1); // Turn backlight OFF
+	  if (errno != 0)
+	  	 printf("Write error LCDbcklgt: %s %d\r\n", strerror(errno), errno);
+	  usleep(5000);
+	  close(fp);
+	}
 
 }
 char 						LCD1W_Write(int LCD_Id, int Line, char *Msg) {
   int             fp, Id;
 	char						Addr[100];
 
-	if (!OneWireList[LCD_Id].Present) {
-		sprintf(InfoText, "Err LCD%d Not initiated\r\n", LCD_Id);
+	if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
+		sprintf(InfoText, "Err LCD%d Write, not initiated\r\n", LCD_Id);
 		LOG_MSG(InfoText);
 	}	else {
 		errno = 0;	
@@ -262,7 +276,7 @@ char 						Scan4Sensors(void) {
 
 // Check which sensors that are actually present and put them in list in sorted order (1..n)
   errno = 0;
-  for (Idx = 0; Idx < EXP_NO_OF_DEVICES; Idx++) {
+  for (Idx = 0; Idx < (int) EXP_NO_OF_DEVICES; Idx++) {
 		sprintf(Addr, "%s%s", OWFS_MP, ExpOneWireList[Idx].Path); 
 
 		//printf(Addr);  // For debugging of new sensors

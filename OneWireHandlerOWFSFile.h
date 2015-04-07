@@ -85,7 +85,8 @@ struct ExpOneWireList_s {
       {2, "T-kyl ", 0x28,  "C6000000C7A59128"}, // HA7S Båt-kyl
       {2, "T-kyl ", 0x28,  "28.91A5C7000000"},  // USB-OWFS Båt-kyl
       {2, "T-kyl ", 0x28,  "19000000F6EBCD28"},	// Inne test   
-			{2, "T-kyl ", 0x10,  "370000003478A710"},	// Inne test
+			{2, "T-kyl ", 0x10,  "370000003478A710"},	// Inne test	
+			{2, "T-kyl ", 0x28,  "28.5BE8C7000000"},	// Inne test
 
       {3, "T-VV  ", 0x28,  "000001b8098028"},
       {3, "T-VV  ", 0x28,  "B4000001B7D01E28"}, // Inne

@@ -61,7 +61,7 @@ void * TimeoutHandler(enum ProcTypes_e ProcType) {
       usleep(TICK_TIME);
     };
     //no = read(fd_own, Buf, sizeof(union SIGNAL)-1);
-		Msg = Buf;
+		Msg = (void *) Buf;
     switch(Msg->SigNo) {
       case SIGTimoReq:
         TimoRec_p = malloc(sizeof(struct TimoRec_s));
@@ -161,7 +161,7 @@ void Tick(unsigned int TickTime)  {
          TickTime -= TimoList_p->DeltaTime;
           // TBD Write  SEND(&TimoList_p->Buff_p, TimoList_p->Owner);
          Tmp_p = TimoList_p;
-         Msg = Buf;
+         Msg = (void *) Buf;
 		     Msg->SigNo = Tmp_p->RespSig;
 	
 			   strcpy(Msg->Timo.ClientName, Tmp_p->ClientName);
