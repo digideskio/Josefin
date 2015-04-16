@@ -111,6 +111,7 @@ struct	TempR_s {
      // struct ADR_s 					  ADR;
       struct KbdIO_s	    		     KbdIO; 
       struct Timeout_s	           Timo;
+			char												 Data[20]; // For debugging..
     };
 
 // Debug tools!!!!

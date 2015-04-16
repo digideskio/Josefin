@@ -165,7 +165,7 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
    	  break;
 
   	  default:
-     	  sprintf(InfoText, "Illegal signal received: %d\n", Msg->SigNo);
+     	  sprintf(InfoText, "Illegal signal received: %d MsgLen: %d Data: %x %x %x %x\n", Msg->SigNo, sizeof(Msg), Msg->Data[0], Msg->Data[1],Msg->Data[2],Msg->Data[3]);
      	  CHECK(FALSE, InfoText);
    	  break;		
 	  } // switch
@@ -294,13 +294,20 @@ char 						Scan4Sensors(void) {
         strncpy(OneWireList[Id].Path, ExpOneWireList[Idx].Path, 100); 
         OneWireList[Id].DevType = ExpOneWireList[Idx].DevType;
 				OneWireList[Id].Data    = ExpOneWireList[Idx].Data;
+				
+				sprintf(InfoText, "Fnd[%d] %s:%s Fct:%3.2f\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
+				LOG_MSG(InfoText);
+// Check if we have the master OWFS device attached == This is "JosefinShip"!
+				if (!strncmp(OneWireList[Id].Path, JosefinShipID, sizeof(JosefinShipID))) { // Check if we have master ID connected
+				  strncpy(ProcState.DeviceName, "JosefinShip" , 11);
+					sprintf(InfoText, "Defined %s f\n", ProcState.DeviceName);
+					LOG_MSG(InfoText);		
+				} 
 
-        sprintf(InfoText, "Fnd[%d] %s:%s Fct:%3.2f\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
-        LOG_MSG(InfoText);
 				if (DEV_LCD == OneWireList[Id].DevType) {  // Initiate all 1W LCDs
-				  ProcState.DevLCDDefined = TRUE;
-	        Set1WLCDOn(OneWireList[Id].Id);   // Turn Display ON
-	        Set1WLCDBlkOn(OneWireList[Id].Id); // Turn backlight ON
+					ProcState.DevLCDDefined = TRUE;
+					Set1WLCDOn(OneWireList[Id].Id);   // Turn Display ON
+					Set1WLCDBlkOn(OneWireList[Id].Id); // Turn backlight ON
 					sprintf(InfoText, "%s initiated\r\n", OneWireList[Id].SensName);
 					LOG_MSG(InfoText);
 				}

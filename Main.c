@@ -130,10 +130,12 @@ int    main(int argc, char *argv[]) {
   ProcState.fd.sens        = 0;
   ProcState.fd.kbdBut      = 0;
   ProcState.fd.kbdKnob     = 0;
-	ProcState.DevLCDDefined = FALSE;
+	ProcState.DevLCDDefined  = FALSE;
   ProcState.UpdateInterval = 12;   // Timeout intervall for data & display update  
 	ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
 
+	// Check if 1wire master ID present, set name accordingly.
+  strncpy(ProcState.DeviceName, "JosefinSim" , 16);
 // Initiate filter queue
 	for (Idx = 0; Idx < NO_OF_ELEM_IN_FILTERQUEU; Idx++) {
 		FQueue[Idx].ADDiesel		= SENS_DEF_VAL;
@@ -171,7 +173,8 @@ int    main(int argc, char *argv[]) {
  // signal(SIGINT, QuitProc);  // Handles CTRL-C command
 
 // Note: Line 2 & 3 must be swapped..!
-  sprintf(&LCDText[0], "Josefin started      ");
+  //sprintf(&LCDText[0], "Josefin started     ");
+  sprintf(&LCDText[0], "%s started    ", ProcState.DeviceName);
   sprintf(&LCDText[40],"  Ver: %s        ", __DATE__);
   sprintf(&LCDText[20],"                     ");
   sprintf(&LCDText[60]," Golding production  ");
@@ -187,7 +190,7 @@ int    main(int argc, char *argv[]) {
 	// printf("LCD Write: %d bytes\r\n", ret);
 #endif
 
-if (ProcState.fd.lcd != 0) {  // If LCD attached
+if (ProcState.fd.lcd >= 0) {  // If LCD attached
 	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
 	LCD1W_WRITE(LCD1, 3, &LCDText[Line2]);
 	LCD1W_WRITE(LCD1, 2, &LCDText[Line3]);
@@ -204,7 +207,7 @@ if (ProcState.fd.lcd != 0) {  // If LCD attached
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExt", SIGInitMeasADExt, 10 Sec); 
   REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitBlkOn", SIGMinuteTick, 60 Sec); 
 	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 10 Sec); // To be adjusted
-	sprintf(InfoText, "Josefin started Ver:  %s\n", __DATE__);
+	sprintf(InfoText, "%s started Ver:  %s\n", ProcState.DeviceName, __DATE__);
   LOG_MSG(InfoText);
   while (TRUE) {
     WAIT(ProcState.fd.own, Buf, sizeof(union SIGNAL));
@@ -214,18 +217,17 @@ if (ProcState.fd.lcd != 0) {  // If LCD attached
  //if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
    switch(Msg->SigNo) {
 		  case SIGByteportReportTick:  // Send report to Byteport 20150214
-				ByteportReport(&ProcState); /* Report to Byteport	*/	
+				//ByteportReport(&ProcState); /* Report to Byteport	*/	
   			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 60 Sec); // To be adjusted 				
       break;
       case SIGMinuteTick:  // Wait until backlight should be turned off
   			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
-//printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
-				if (ProcState.fd.lcd != 0) {  // First check that we have a LCD attached
+		 // printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
+				if (ProcState.fd.lcd >= 0) {  // First check that we have a LCD attached
 					if (ProcState.LCDBlkOnTimer <= 0) 
 						Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
 					else
 						ProcState.LCDBlkOnTimer--;	
-				//ByteportReport(&ProcState); /* Report to Byteport	*/	
 				}
       break;
 			case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
@@ -494,7 +496,7 @@ if (ProcState.fd.lcd != 0) {  // If LCD attached
 			break;
 				
       default:
-        sprintf(InfoText, "Illegal signal received: %d\n", Msg->SigNo);
+        sprintf(InfoText, "Illegal signal received: %d MsgLen: %d Data: %x %x %x %x\n", Msg->SigNo, sizeof(Msg), Msg->Data[0], Msg->Data[1],Msg->Data[2],Msg->Data[3]);
         CHECK(FALSE, InfoText);
       break;
     } // Switch
@@ -851,7 +853,7 @@ void   ByteportReport(struct ProcState_s *PState) {
   CURLcode 		res;
 	char 				CurlText[500];
 	
-	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/%s/?_key=b43cb5709b37ff3125195b54", ByteportDevice );
+	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/%s/?_key=b43cb5709b37ff3125195b54", ProcState.DeviceName );
 	
 	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
 						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
@@ -859,7 +861,7 @@ void   ByteportReport(struct ProcState_s *PState) {
   if(curl) {
 			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
 			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-		//curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+	//	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
 				
 			/* Perform the request, res will get the return code */ 
 			
@@ -872,7 +874,7 @@ void   ByteportReport(struct ProcState_s *PState) {
 			if(res != CURLE_OK)
 				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 
 				/* always cleanup */ 
-				curl_easy_cleanup(curl);
+			curl_easy_cleanup(curl);
 	} else {
 		printf(stderr, "curl_easy_init() failed: %d\n", curl);
 	}

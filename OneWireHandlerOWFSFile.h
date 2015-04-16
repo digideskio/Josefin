@@ -16,6 +16,9 @@
 #define DEV_DS18B20					0x28    // Temperature sensor
 #define DEV_LCD							0xFF    // LCD module
 
+#define JosefinShipID				"28.91A5C7000000"   // Select one 1Wire ID as the ID for that this must be JosefinShip (byteport reporting)
+																								// otherwise its JosefinSim
+
 #define OWFS_MP							"/mnt/1wire/"   // Mount point for OWFS filesystem
 
 // Definitions for 1W LCD
@@ -64,7 +67,7 @@ struct ExpOneWireList_s {
 			// Syntax: 28.xxx  == using usb and OWFS
 			//				 800xxxxxxxx28 == using HA7S
       // I have therefore included both definitions in the structure 
-			// below so you can use either. Remeber to add for both for new sensors
+			// below so you can use either. Remember to add for both for new sensors
 			// New (not defined) sensors can be found in /mnt/1wire (mount point)
       // Ids must be 0..n in any order but with no gaps in the list!!
       /************************************************************/

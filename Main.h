@@ -5,9 +5,6 @@
  *      W    2006-11-24 AGY  Created.
  *
  *************************************************************************/
-// Define device name
-#define ByteportDevice  "JosefinSim"   // or use "JosefinSim"
-
 
 // Define devices, pipes etc.
 #define LCD 					"/dev/lcd"
@@ -179,7 +176,8 @@ struct ProcState_s {
 	char					DevLCDDefined;
   float         UpdateInterval;
 	char					LCDBlkOnTimer; // Time in minutes until backligt is turned off
-  struct fd_s {  // Filedescriptors
+  char					DeviceName[16]; // The name is defined in OneWireHandlerOWFSFile.c. The name to use for Byteport reporting 
+ struct fd_s {  // Filedescriptors
     int           lcd;
     int           timo;
     int           sens;
