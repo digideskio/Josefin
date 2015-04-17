@@ -217,7 +217,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
  //if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
    switch(Msg->SigNo) {
 		  case SIGByteportReportTick:  // Send report to Byteport 20150214
-				//ByteportReport(&ProcState); /* Report to Byteport	*/	
+				ByteportReport(&ProcState); /* Report to Byteport	*/	
   			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitByteportReport", SIGByteportReportTick, 60 Sec); // To be adjusted 				
       break;
       case SIGMinuteTick:  // Wait until backlight should be turned off
