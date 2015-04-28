@@ -173,11 +173,12 @@ int    main(int argc, char *argv[]) {
  // signal(SIGINT, QuitProc);  // Handles CTRL-C command
 
 // Note: Line 2 & 3 must be swapped..!
-  //sprintf(&LCDText[0], "Josefin started     ");
-  sprintf(&LCDText[0], "%s started    ", ProcState.DeviceName);
-  sprintf(&LCDText[40],"  Ver: %s        ", __DATE__);
-  sprintf(&LCDText[20],"                     ");
-  sprintf(&LCDText[60]," Golding production  ");
+  //sprintf(&LCDText[0], "%s started    ", ProcState.DeviceName);
+  //sprintf(&LCDText[40],"  Ver: %s          ", __DATE__);
+  //sprintf(&LCDText[20],"                    ");
+  //sprintf(&LCDText[60]," Golding production ");
+	
+	sprintf(&LCDText[0], " %s started   Ver: %s                       Golding production ", ProcState.DeviceName, __DATE__ );
  // LCD_WRITE(ProcState.fd.lcd, 1, 1, LCDText);
 
 #ifdef LCD_DEFINED	
@@ -212,9 +213,10 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
   while (TRUE) {
     WAIT(ProcState.fd.own, Buf, sizeof(union SIGNAL));
 //if (Msg->SigNo == 10) {DbgTest = 1;}
-		
+		fflush(stdout);  // Flush stdout, used if we print to file
 		Msg = (void *) Buf;
  //if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
+ 
    switch(Msg->SigNo) {
 		  case SIGByteportReportTick:  // Send report to Byteport 20150214
 				ByteportReport(&ProcState); /* Report to Byteport	*/	
@@ -405,14 +407,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						  ProcState.BatVoltF      = Msg->SensorResp.Val[2];
 			 			  ProcState.ADWaterLevel  = Msg->SensorResp.Val[1];
 							ProcState.ADDieselLevel = Msg->SensorResp.Val[0];
-
-						//	printf("ADD: %f ADW: %f ADB: %f \r\n", Msg->SensorResp.Val[0], Msg->SensorResp.Val[1],Msg->SensorResp.Val[2]);				
-							
-							// If we dont get correct readout of battery voltage, use default value!
-              if (ProcState.BatVoltF < 11) ProcState.BatVoltF = 13;
-// Get corresponding Water and Diesel level, scale towards 13. Volt (used for table in Excel-sheet)
-     //         ProcState.BatVoltF = 13; // Hard code this!!
-
+						//	printf("ADD: %f ADW: %f ADB: %f \r\n", Msg->SensorResp.Val[0], Msg->SensorResp.Val[1],Msg->SensorResp.Val[2]);									
 							ProcState.WaterLevel   =  GetWaterLevel(ProcState.ADWaterLevel) * 13 / ProcState.BatVoltF;
 							ProcState.DieselLevel  =  GetDieselLevel(ProcState.ADDieselLevel) * 13 / ProcState.BatVoltF;
 						}   
@@ -861,7 +856,9 @@ void   ByteportReport(struct ProcState_s *PState) {
   if(curl) {
 			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
 			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-	//	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+	if (DebugOn) {
+		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+	}
 				
 			/* Perform the request, res will get the return code */ 
 			

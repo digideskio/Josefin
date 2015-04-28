@@ -1,10 +1,14 @@
 Instruktioner
+cd /home
+Sätt chown -R root *
 
 Test att detta laddas ned
 BBB
 Starta OWFS samt Josefin genom dom tv� startup scripten.
 OWFSStartScript.service
 JosefinStartScript.service
+
+Check etc/init.d/JosefinStartupScript
 
 Start OWFS on Beaglebone black
 sudo /opt/owfs/bin/owfs -uall --usb_regulartime --allow_other /mnt/1wire/
