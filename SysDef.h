@@ -119,6 +119,8 @@ char DebugOn;  // Global variable, may be used by everyone
 
 struct ProcState_s  ProcState; // Write only Main.c, read all
 
+pthread_mutex_t   *MutexFlag;
+
 #define DBGON DebugOn = TRUE;
 #define DBGOFF DebugOn = FALSE;
 
@@ -196,16 +198,30 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
 #define   WAIT(a, b, c)        {while(read(a, b , c) != c) {  \
 /*printf(".");*/\
                                  usleep(WTIME);\
-															  }\
+															  } \
                                }	
 
 // a = filedescriptor, b = Message
-#define   SENDa(a,b)            CHECK(write(a, b, sizeof(b) != -1), "Unable to SEND\r\n");\
-                                 /* mutex...*/\
-                                 b = NULL;\
-                                 /* mutex..*/
-#define   SEND(a,b, c)          {CHECK(write(a, b, c) == c, "SEND error\n");}
+#define   SENDa(a,b)            CHECK(write(a, b, sizeof(b) != -1), "Unable to SEND\r\n"); \
+                                 mutex.Lock(); \
+                                 b = NULL; \
+                                 mutex.Unlock();
+																 
+#define   SENDb(a,b, c)          {pthread_mutex_lock(&MutexFlag); \
+																  CHECK(write(a, b, c) == c, "SEND error\n"); \
+																  b = NULL; \
+																  pthread_mutex_unlock(&MutexFlag); \
+																}
 
+#define   SENDNew(a,b, c)        {pthread_mutex_lock(&MutexFlag); \
+																  CHECK(write(a, b, c) == c, "SEND error\n"); \
+																  b = NULL; \
+																  pthread_mutex_unlock(&MutexFlag); \	
+																}
+																
+#define   SEND(a,b, c)          {CHECK(write(a, b, c) == c, "SEND error\n");  usleep(5000);}		
+// Since I added Curl (Byteport) I have had problems with Illegal Signals received, probably due to 
+// some memory over write/timing problems. After adding the small usleep it works again.														
 
 
 // Define signals and owner

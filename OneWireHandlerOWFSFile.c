@@ -173,7 +173,7 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
 }
 char 						Set1WLCDOn(int LCD_Id) {
   int           fp;
-	char					Addr[100];
+	char					Addr[300];
 
 if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
 		sprintf(InfoText, "Err LCD%d Not initiated\r\n", LCD_Id);
@@ -191,7 +191,7 @@ if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
 }
 char 						Set1WLCDBlkOn(int LCD_Id) {
   int           fp;
-	char					Addr[100];
+	char					Addr[300];
 
 	if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
 		sprintf(InfoText, "Err LCD%d Backlight ON, not initiated\r\n", LCD_Id);
@@ -208,7 +208,7 @@ char 						Set1WLCDBlkOn(int LCD_Id) {
 }
 char 						Set1WLCDBlkOff(int LCD_Id) {
   int           fp;
-	char					Addr[100];
+	char					Addr[300];
 
 	if (!OneWireList[LCD_Id].Present) {  // Check that LCD attached
 		sprintf(InfoText, "Err LCD%d Backlight OFF, not initiated\r\n", LCD_Id);
@@ -226,7 +226,7 @@ char 						Set1WLCDBlkOff(int LCD_Id) {
 }
 char 						LCD1W_Write(int LCD_Id, int Line, char *Msg) {
   int             fp, Id;
-	char						Addr[100];
+	char						Addr[300];
 
 	if (!OneWireList[LCD_Id].Present) { // Check that LCD attached
 		sprintf(InfoText, "Err LCD%d Write, not initiated\r\n", LCD_Id);
@@ -272,7 +272,7 @@ char 						LCD1W_Write(int LCD_Id, int Line, char *Msg) {
 char 						Scan4Sensors(void) {
   int              Idx, Id;
   FILE             *fp;
-	char							Addr[100];
+	char							Addr[300];
 
 // Check which sensors that are actually present and put them in list in sorted order (1..n)
   errno = 0;
@@ -324,7 +324,7 @@ char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, 
   char						Status;
   unsigned int 		lastcrc16;
   unsigned char		ScrPad[24]; 					
-  char	        	Address[200], line[200];
+  char	        	Address[300], line[300];
   float						templong; 
 	
   // Set default values
@@ -379,7 +379,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
   char						Status;
   unsigned int 		lastcrc16;
   unsigned char		ScrPad[24]; 					
-  char	        	AddrChA[100], AddrChB[100], AddrChC[100], AddrChD[100], line[80];
+  char	        	AddrChA[300], AddrChB[300], AddrChC[300], AddrChD[300], line[300];
   float						templong, ConvLevelAD;  // Note, see ReadAD all for use of ConvLevel, read from OneWireList..7 Apr 2015
 	
   // Set default values
@@ -462,7 +462,7 @@ char 						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPa
 	 unsigned char		ScrPad[10];		// Scratchpad
 	 float  					hi_precision; // Calculated temperature in Centigrade							
    //FILE	            *fp;
-   char	            Addr[100], line[80];
+   char	            Addr[300], line[300];
 
   Status = FALSE;
   *Temp = SENS_DEF_VAL; // Default, indicates error!
