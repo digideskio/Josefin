@@ -17,7 +17,7 @@
 #define DEV_LCD							0xFF    // LCD module
 
 #define JosefinShipID				"28.91A5C7000000"   // Select one 1Wire ID as the ID for that this must be JosefinShip (byteport reporting)
-																								// otherwise its JosefinSim
+																								// otherwise, if not found, its JosefinSim
 
 #define OWFS_MP							"/mnt/1wire/"   // Mount point for OWFS filesystem
 

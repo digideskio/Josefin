@@ -181,8 +181,6 @@ int    main(int argc, char *argv[]) {
 //	LCD_CTRL(ProcState.fd.lcd, LCD_On); 
 //	LCD_CTRL(ProcState.fd.lcd, LCD_Cursor_On);
 
-MutexFlag = malloc(sizeof (pthread_mutex_t));
-pthread_mutex_init(&MutexFlag, NULL);
 
 #endif  
   InitProc(&ProcState); sleep(2);
@@ -298,12 +296,12 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
       break;
 
       case SIGReadSensorResp:
-				if (DebugOn) {		
+				/*if (DebugOn) {		
 					printf(" SenRsp %d: %10.5f sec V1: %f V2: %f  Status: %s \r\n", 
 								 Msg->SensorResp.Sensor, Msg->SensorResp.CmdTime,
 								 Msg->SensorResp.Val[0], Msg->SensorResp.Val[1],
 								 Msg->SensorResp.Status ? "OK" : "ERROR");
-				}
+				}*/
         switch (Msg->SensorResp.Sensor) {
 					case OUT_TEMP: 
 						ProcState.OutTemp = Msg->SensorResp.Val[0];
@@ -423,7 +421,13 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						  ProcState.BatVoltF      = Msg->SensorResp.Val[2];
 			 			  ProcState.ADWaterLevel  = Msg->SensorResp.Val[1];
 							ProcState.ADDieselLevel = Msg->SensorResp.Val[0];
-						//	printf("ADD: %f ADW: %f ADB: %f \r\n", Msg->SensorResp.Val[0], Msg->SensorResp.Val[1],Msg->SensorResp.Val[2]);									
+              
+							if ((ProcState.BatVoltF < 10) || (ProcState.BatVoltF > 15)) // Check if reasonable Voltage
+								ProcState.BatVoltF = 13; // Set default value
+								
+							if (DebugOn)
+								printf("ADD: %f  ADW: %f  ADBat: %f\r\n", Msg->SensorResp.Val[0], Msg->SensorResp.Val[1], Msg->SensorResp.Val[2]);									
+							
 							ProcState.WaterLevel   =  GetWaterLevel(ProcState.ADWaterLevel) * 13 / ProcState.BatVoltF;
 							ProcState.DieselLevel  =  GetDieselLevel(ProcState.ADDieselLevel) * 13 / ProcState.BatVoltF;
 						}   
@@ -713,14 +717,17 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
 			} else {
         sprintf(&LCDText[Line1], "SysInfo     Dbg OFF ");
 			}
+			
+/*		Removing this, not needed anymore! 20150627	
       if (PState->BatVoltS == SENS_DEF_VAL)
         sprintf(&LCDText[Line2], " Str  --.-- V        ");
       else
         sprintf(&LCDText[Line2], " Str %5.1f V         ", PState->BatVoltS);
+*/
       if (PState->BatVoltF == SENS_DEF_VAL)
-        sprintf(&LCDText[Line3], " Fbr  --.-- V        ");
+        sprintf(&LCDText[Line2], " Fbr  --.-- V        ");
       else 
-        sprintf(&LCDText[Line3], " Fbr %5.1f V         ", PState->BatVoltF);
+        sprintf(&LCDText[Line2], " Fbr %5.1f V         ", PState->BatVoltF);
       sprintf(&LCDText[Line4], "                        ");
  
 			break;
@@ -762,9 +769,9 @@ if (PState->DevLCDDefined) {
 #endif
 if (ret < 0) printf("LCD Write 2: %d bytes\r\n", ret);
 
-	if (DebugOn) {
-		printf("%s\n", LCDText); // Print on screen also
-	}
+//	if (DebugOn) {
+//		printf("%s\n", LCDText); // Print on screen also
+//	}
 	
 #else
   //printf(" %s \n", LCDText);
@@ -907,9 +914,9 @@ void   NewByteportReport(struct ProcState_s *PState) {
  
 			/* we pass our 'chunk' struct to the callback function */ 
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-	if (DebugOn) {
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
-	}
+//	if (DebugOn) {
+//		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+//	}
 				
 			/* Perform the request, res will get the return code */ 
 			
@@ -958,9 +965,9 @@ void   ByteportReport(struct ProcState_s *PState) {
 			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
 			//curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-	if (DebugOn) {
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
-	}
+//	if (DebugOn) {
+//		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
+//	}
 				
 			/* Perform the request, res will get the return code */ 
 			

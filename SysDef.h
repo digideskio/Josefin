@@ -202,24 +202,12 @@ pthread_mutex_t   *MutexFlag;
                                }	
 
 // a = filedescriptor, b = Message
-#define   SENDa(a,b)            CHECK(write(a, b, sizeof(b) != -1), "Unable to SEND\r\n"); \
-                                 mutex.Lock(); \
-                                 b = NULL; \
+#define   SENDa(a,b)            CHECK(write(a, b, sizeof(b) != -1), "Unable to SEND\r\n");\
+                                 mutex.Lock();\
+                                 b = NULL;\
                                  mutex.Unlock();
-																 
-#define   SENDb(a,b, c)          {pthread_mutex_lock(&MutexFlag); \
-																  CHECK(write(a, b, c) == c, "SEND error\n"); \
-																  b = NULL; \
-																  pthread_mutex_unlock(&MutexFlag); \
-																}
-
-#define   SENDNew(a,b, c)        {pthread_mutex_lock(&MutexFlag); \
-																  CHECK(write(a, b, c) == c, "SEND error\n"); \
-																  b = NULL; \
-																  pthread_mutex_unlock(&MutexFlag); \	
-																}
-																
-#define   SEND(a,b, c)          {CHECK(write(a, b, c) == c, "SEND error\n");  usleep(5000);}		
+																 														
+#define   SEND(a,b, c)          {CHECK(write(a, b, c) == c, "SEND error\n");  usleep(50000);}		
 // Since I added Curl (Byteport) I have had problems with Illegal Signals received, probably due to 
 // some memory over write/timing problems. After adding the small usleep it works again.														
 

@@ -132,8 +132,8 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
 
 							}  
            /*   READ_TIMER(TM2);  */
-							DELTA_TIME(DeltaTime, TM2, TM1);
-							OneWireList[Id].Val[0] = AD[0];
+							//DELTA_TIME(DeltaTime, TM2, TM1);
+							OneWireList[Id].Val[0] = AD[0];							
 							OneWireList[Id].Val[1] = AD[1];
 							OneWireList[Id].Val[2] = AD[2];
 							OneWireList[Id].Val[3] = AD[3];
@@ -365,8 +365,12 @@ char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, 
 			AD[1] = ConvLevelAD * atof(&line[13]);
 			AD[2] = ConvLevelAD * atof(&line[26]);
 			AD[3] = ConvLevelAD * atof(&line[40]);
-			//sprintf(InfoText, "Fact: %f %s :AD0 %10.6f AD1 %10.6f AD2 %10.6f AD3 %10.6f\r\n", ConvLevelAD, line, AD[0], AD[1], AD[2], AD[3]);	
-			//LOG_MSG(InfoText);
+			if (DebugOn) {
+				sprintf(InfoText, "Fact: %f %s \r\n", ConvLevelAD, line);
+				LOG_MSG(InfoText);
+				sprintf(InfoText, "          AD0 %10.6f AD1 %10.6f AD2 %10.6f AD3 %10.6f\r\n", AD[0], AD[1], AD[2], AD[3]);
+				LOG_MSG(InfoText);
+			}	
 		} 
 	}
 	return Status;
