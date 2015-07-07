@@ -30,7 +30,7 @@ char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
 char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
-char						ReadADALL(float *AD, float Factor, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
+char						ReadADALL(float *AD, int Factor, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
 char						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex);
 int 						A2HexByte(char A1, char A2);
 int 						ToHex(char ch);
@@ -295,7 +295,7 @@ char 						Scan4Sensors(void) {
         OneWireList[Id].DevType = ExpOneWireList[Idx].DevType;
 				OneWireList[Id].Data    = ExpOneWireList[Idx].Data;
 				
-				sprintf(InfoText, "Fnd[%d] %s:%s Fct:%3.2f\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
+				sprintf(InfoText, "Fnd[%d] %s:%s Fct:%d\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
 				LOG_MSG(InfoText);
 // Check if we have the master OWFS device attached == This is "JosefinShip"!
 				if (!strncmp(OneWireList[Id].Path, JosefinShipID, sizeof(JosefinShipID))) { // Check if we have master ID connected
@@ -318,7 +318,7 @@ char 						Scan4Sensors(void) {
     }
   } // End for
 }
-char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
+char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
   int 						idx;
 	char   					ADReadIdx;
   char						Status;
@@ -361,10 +361,32 @@ char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, 
 			//	sprintf(InfoText, "Read AD-All %s\n", line);
 			//	LOG_MSG(InfoText);
 			fclose(fp);	
-			AD[0] = ConvLevelAD * atof(&line[3]);
-			AD[1] = ConvLevelAD * atof(&line[13]);
-			AD[2] = ConvLevelAD * atof(&line[26]);
-			AD[3] = ConvLevelAD * atof(&line[40]);
+			switch (ConvLevelAD)  {
+				case 3:  // Old own wired version using factor 2 (Water, Diesel) and factor 3 for Battery
+					AD[0] = 2 * atof(&line[3]);
+					AD[1] = 2 * atof(&line[13]);
+					AD[2] = 3 * atof(&line[26]); // Small fix as we have factor 3 on batteries
+					// NOT USED AD[3] = ConvLevelAD * atof(&line[40]);
+						
+				break;
+				
+				case 5:  // New version using factor 5 for AD inputs
+					AD[0] = 5 * atof(&line[3]);
+					AD[1] = 5 * atof(&line[13]);
+					AD[2] = 5 * atof(&line[26]); // Small fix as we have factor 3 on batteries
+					AD[3] = 5 * atof(&line[40]);
+				break;
+				
+				default:
+					AD[0] = 5 * atof(&line[3]);
+					AD[1] = 5 * atof(&line[13]);
+					AD[2] = 5 * atof(&line[26]); // Small fix as we have factor 3 on batteries
+					AD[3] = 5 * atof(&line[40]);
+					sprintf(InfoText, "Err: Undefined AD sensor \r\n");
+				  LOG_MSG(InfoText);
+				break;				
+			} // End of switch
+			
 			if (DebugOn) {
 				sprintf(InfoText, "Fact: %f %s \r\n", ConvLevelAD, line);
 				LOG_MSG(InfoText);
