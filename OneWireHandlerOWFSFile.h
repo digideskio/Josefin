@@ -46,7 +46,7 @@ struct OneWireList_s {
    unsigned char    DevType;
    char             Path[55];
    float						Val[4];   // Read values
-	 int   						Data;  // Normally not used but for AD for ex you can select ID = Conversion factor
+	 float						Data;  // Normally not used but for AD for ex you can select Conversion factor
 };
 
 
@@ -104,9 +104,9 @@ struct ExpOneWireList_s {
       {5, "AD Ext", 0x20,  "20.CF3714000000", 5}, // USB-OWFS Ny-version Inne AD Water & diesel, factor 5
 			{5, "AD Ext", 0x20,  "20.EF4806000000", 5}, // AD Water & diesel
 			{5, "AD Ext", 0x20,  "000000094c9420", 5}, //  
-      {5, "AD Ext", 0x20,  "20.9149650000000", 3},  // AD i båt     
-			{5, "AD Ext", 0x20,  "20.915406000000", 3},  // USB-OWFS AD i båt
-			{5, "AD Ext", 0x20,  "20.626A06000000", 3}, // AD ext inne (på trä kortet)
+      {5, "AD Ext", 0x20,  "20.9149650000000", 3.14},  // AD i båt     
+			{5, "AD Ext", 0x20,  "20.915406000000", 3.14},  // USB-OWFS AD i båt
+			{5, "AD Ext", 0x20,  "20.626A06000000", 3.14}, // AD ext inne (på trä kortet)
 
 //    {2, "Temp kort" ,0x28,  "000000f7bae628", 0},
 //    {2, "Temp kort", 0x28,  "000000fef37e28", 0},

@@ -12,6 +12,7 @@
 #define ONEWIRE_PIPE	"/tmp/onewirepipe"
 #define MAIN_PIPE			"/tmp/mainpipe"
 #define TIMO_PIPE			"/tmp/timopipe"
+#define BYTEPOTFOLDER	"/tmp/byteport"
 
 #define LCDBlkOnTimerVal  60  // No of minutes before turning off inactive backlight
 

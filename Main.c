@@ -89,14 +89,6 @@ struct  FQ_s  { // used to make a smoother presentation
 	float     ADBatVoltF;
 } FQueue[NO_OF_ELEM_IN_FILTERQUEU] ;
 
-// Structure for Callback function to Byteport report
-struct MemoryStruct {
-  char *memory;
-  size_t size;
-};
-
-struct MemoryStruct chunk;
-	
 
 int    main(int argc, char *argv[]) {
 	union SIGNAL			 		*Msg;
@@ -105,11 +97,7 @@ int    main(int argc, char *argv[]) {
   unsigned char       	UpdateInterval, Idx;
 	enum ProcTypes_e    	ProcessorType;
 
- // Initiate callback for curl, Byteport report
-  chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */ 
-  chunk.size = 0;    /* no data at this point */ 
-
-	
+ 
 	//DebugOn = TRUE;   // Start in Debug mode
 
 	//ProcState.ModeState      = Water;          // Set initial value, for test purpose. TBD later
@@ -866,82 +854,6 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
 
 }  // BuildBarText
 
-static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-  size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
- 
-  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-  if(mem->memory == NULL) {
-    /* out of memory! */ 
-    printf("not enough memory (realloc returned NULL)\n");
-    return 0;
-  }
- 
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize;
-  mem->memory[mem->size] = 0;
-	
-	sprintf(InfoText, "curl writeback: %s Size: %d\r\n", contents, realsize);
-	LOG_MSG(InfoText);
- 
-  return realsize;
-}
- 
-
-void   NewByteportReport(struct ProcState_s *PState) {
-	
-	CURL 			 *curl;
-  CURLcode 		res;
-	char 				CurlText[1000];
-	void 				*Buf;
-	char        RecBuf[100];
-	size_t			NoOfChars, NoOfRecChars, *n;
-	
-  NoOfChars = 80; // Maximum chars we can receive
-	n = &NoOfRecChars; // Set n to point to variable
-	Buf = RecBuf; // Set pointer
-	
-	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/%s/?_key=b43cb5709b37ff3125195b54", ProcState.DeviceName );
-	
-	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
-						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
-	 curl = curl_easy_init();
-  if(curl) {
-			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
-			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-			/* send all data to this function  */ 
-			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
- 
-			/* we pass our 'chunk' struct to the callback function */ 
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-//	if (DebugOn) {
-//		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
-//	}
-				
-			/* Perform the request, res will get the return code */ 
-			
-			
-			//LOG_MSG(CurlText); 
-//printf("Curl %d: ", strlen(CurlText));
-			
-			res = curl_easy_perform(curl); // printf(" :\r\n");	
-
-//	curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);			
-//	res = curl_easy_recv(curl, Buf, NoOfChars, n); // printf(" :\r\n");
-//	printf("CurlRec: %s Chars: %d \r\n", RecBuf, NoOfRecChars);
-			
-
-			/* Check for errors */ 
-			if(res != CURLE_OK)
-				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 
-				/* always cleanup */ 
-			curl_easy_cleanup(curl);
-	} else {
-		printf(stderr, "curl_easy_init() failed: %d\n", curl);
-	}
-	
-  return; 
-}
 
 void   ByteportReport(struct ProcState_s *PState) {
 	
@@ -951,7 +863,7 @@ void   ByteportReport(struct ProcState_s *PState) {
 	void 				*Buf;
 	char        RecBuf[100];
 	size_t			NoOfChars, NoOfRecChars, *n;
-	
+	/*
   NoOfChars = 80; // Maximum chars we can receive
 	n = &NoOfRecChars; // Set n to point to variable
 	Buf = RecBuf; // Set pointer
@@ -969,7 +881,7 @@ void   ByteportReport(struct ProcState_s *PState) {
 //		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
 //	}
 				
-			/* Perform the request, res will get the return code */ 
+			// Perform the request, res will get the return code 
 			
 			
 			//LOG_MSG(CurlText); 
@@ -982,14 +894,55 @@ void   ByteportReport(struct ProcState_s *PState) {
 //	printf("CurlRec: %s Chars: %d \r\n", RecBuf, NoOfRecChars);
 			
 
-			/* Check for errors */ 
+			// Check for errors 
 			if(res != CURLE_OK)
 				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 
-				/* always cleanup */ 
+				// always cleanup  
 			curl_easy_cleanup(curl);
 	} else {
 		printf(stderr, "curl_easy_init() failed: %d\n", curl);
 	}
+	
+*/
+	// New code
+	FILE *fp;
+	 fp = fopen("/tmp/byteport/OutTemp", "w");
+	 sprintf(CurlText, "%-.1f", PState->OutTemp);
+	 fprintf(fp, CurlText);
+	 fclose(fp);
+	 
+
+	 fp = fopen("/tmp/byteport/BoxTemp", "w");
+	 sprintf(CurlText, "%-.1f", PState->BoxTemp);
+	 fprintf(fp, CurlText);
+	 fclose(fp);
+	 
+	 
+	 fp = fopen("/tmp/byteport/RefrigTemp", "w");
+	 sprintf(CurlText, "%-.1f", PState->RefrigTemp);
+	 fprintf(fp, CurlText);
+	 fclose(fp);
+	 
+	
+	 fp = fopen("/tmp/byteport/DieselLevel", "w");
+	 sprintf(CurlText, "%-.0f", PState->DieselLevel);
+	 fprintf(fp, CurlText);
+	 fclose(fp);
+	 
+	 fp = fopen("/tmp/byteport/WaterLevel", "w");
+	 sprintf(CurlText, "%-.0f", PState->WaterLevel);
+	 fprintf(fp, CurlText);
+	 fclose(fp);
+	 
+	 fp = fopen("/tmp/byteport/BatVoltF", "w");
+	 sprintf(CurlText, "%-.0f", PState->BatVoltF);
+	 fprintf(fp, CurlText);
+	 fclose(fp);
+	 
+	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
+						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
+	
+	
 	
   return; 
 }
@@ -1020,7 +973,8 @@ void   InitProc(struct ProcState_s *PState) {
   remove(MAIN_PIPE);
   remove(TIMO_PIPE);
   umask(0);
-  mknod(KBD_PIPE,  S_IFIFO|0666, 0); 
+  mknod("tmp/byteport/",  S_IFDIR|0666, 0); 
+	mknod(KBD_PIPE,  S_IFIFO|0666, 0); 
   mknod(ONEWIRE_PIPE, S_IFIFO|0666, 0); 
   mknod(MAIN_PIPE, S_IFIFO|0666, 0); 
   mknod(TIMO_PIPE, S_IFIFO|0666, 0); 
