@@ -46,7 +46,7 @@ struct OneWireList_s {
    unsigned char    DevType;
    char             Path[55];
    float						Val[4];   // Read values
-	 float						Data;  // Normally not used but for AD for ex you can select Conversion factor
+	 int  						Data;  // Normally not used but for AD for ex you can select Conversion factor
 };
 
 
@@ -55,7 +55,7 @@ struct ExpOneWireList_s {
    char             SensName[16];
    unsigned char    DevType;
    char             Path[55];	
-	 float						Data;  // Normally not used but for AD for ex you can select Conversion factor
+	 int  						Data;  // Normally not used but for AD for ex you can select Conversion factor
 };
 
  static const struct ExpOneWireList_s ExpOneWireList[] = {

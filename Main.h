@@ -163,6 +163,7 @@ struct ProcState_s {
   float         MinWaterTemp;	
   float         MaxWaterTemp;	
   float         WaterTemp; 
+	float         HWaterTemp; 
 	float         HWTemp;	
 	float         MinHWTemp;	
 	float         MaxHWTemp;	
@@ -186,6 +187,16 @@ struct ProcState_s {
     int           ToOwn;
     int           kbdKnob;
     int           kbdBut;
+		FILE				  *OutTemp;
+		FILE					*RefrigTemp;
+		FILE					*BoxTemp;
+		FILE					*DieselLevel;
+		FILE					*WaterLevel;
+		FILE					*HWaterTemp;
+		FILE					*WaterTemp;
+		FILE					*SeaTemp;
+		FILE					*BatVoltF;
+								
   } fd;  
   struct thread_s {
     pthread_t     KbdKnob;

@@ -30,7 +30,7 @@ char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
 char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
-char						ReadADALL(float *AD, float Factor, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
+char						ReadADALL(float *AD, int Factor, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
 char						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex);
 int 						A2HexByte(char A1, char A2);
 int 						ToHex(char ch);
@@ -300,7 +300,7 @@ char 						Scan4Sensors(void) {
         //  fclose(fp);		
 				
 				
-				sprintf(InfoText, "Fnd[%d] %s:%s Fct:%3.2f\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
+				sprintf(InfoText, "Fnd[%d] %s:%s Fct:%df\n", OneWireList[Id].Id, OneWireList[Id].SensName, OneWireList[Id].Path, OneWireList[Id].Data );
 				LOG_MSG(InfoText);
 // Check if we have the master OWFS device attached == This is "JosefinShip"!
 				if (!strncmp(OneWireList[Id].Path, JosefinShipID, sizeof(JosefinShipID))) { // Check if we have master ID connected
@@ -323,7 +323,7 @@ char 						Scan4Sensors(void) {
     }
   } // End for
 }
-char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
+char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
   int 						idx;
 	char   					ADReadIdx;
   char						Status;
@@ -340,7 +340,6 @@ char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, 
   sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
  // printf ("AD Fact: %3.2f %s\r\n", ConvLevelAD, SensorPath);
 	
-	// read Channel A
 	if((fp = fopen(Address, "r")) == NULL)  {
 		sprintf(InfoText, "ERROR: %s %d Cannot open file %s \n", strerror(errno), errno, SensorPath);
 		CHECK(FALSE, InfoText);
@@ -366,10 +365,31 @@ char			ReadADALL(float *AD, float ConvLevelAD, FILE *fp, unsigned char DevType, 
 			//	sprintf(InfoText, "Read AD-All %s\n", line);
 			//	LOG_MSG(InfoText);
 			fclose(fp);	
-			AD[0] = ConvLevelAD * atof(&line[3]);
-			AD[1] = ConvLevelAD * atof(&line[13]);
-			AD[2] = ConvLevelAD * atof(&line[26]);
-			AD[3] = ConvLevelAD * atof(&line[40]);
+			switch ( ConvLevelAD) {			
+				case 3:  // Old own built type used in Josefin today
+					AD[0] = 2 * atof(&line[3]);
+					AD[1] = 2 * atof(&line[13]);
+					AD[2] = 3 * atof(&line[26]); 
+					AD[3] = 3 * atof(&line[40]);  // Not used today
+				break;
+				
+				case 5:  // New type, bought from M-Teknik 
+					AD[0] = 5 * atof(&line[3]);
+					AD[1] = 5 * atof(&line[13]);
+					AD[2] = 5 * atof(&line[26]);
+					AD[3] = 5 * atof(&line[40]);  // Not used today			
+				break;
+				
+				default:
+					AD[0] = atof(&line[3]);
+					AD[1] = atof(&line[13]);
+					AD[2] = atof(&line[26]);
+					AD[3] = atof(&line[40]);  // Not used today		
+					LOG_MSG(InfoText);
+					sprintf(InfoText, " Err: Unknown AD conversion factor\r\n");
+				break;
+			}
+			
 			if (DebugOn) {
 				sprintf(InfoText, "Fact: %f %s \r\n", ConvLevelAD, line);
 				LOG_MSG(InfoText);
