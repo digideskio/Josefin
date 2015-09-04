@@ -451,18 +451,22 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 							Msg->SensorResp.Val[2] = Msg->SensorResp.Val[2]/(NO_OF_ELEM_IN_FILTERQUEU);							
 //printf("Wavg: %4f WLatest: %4f \r\n", Msg->SensorResp.Val[1], FQueue[0].ADWater);
 						
-						  ProcState.BatVoltF      = Msg->SensorResp.Val[2];
+						  ProcState.BatVoltF      = (Msg->SensorResp.Val[2] + 0.5);  // Need to 0.5V due to measurement errors..?
 			 			  ProcState.ADWaterLevel  = Msg->SensorResp.Val[1];
-							ProcState.ADDieselLevel = Msg->SensorResp.Val[0];
+							ProcState.ADDieselLevel = Msg->SensorResp.Val[0]; 
               
 							if ((ProcState.BatVoltF < 10) || (ProcState.BatVoltF > 15)) // Check if reasonable Voltage
 								ProcState.BatVoltF = 13; // Set default value
 								
 							if (DebugOn)
-								printf("ADD: %f  ADW: %f  ADBat: %f\r\n", Msg->SensorResp.Val[0], Msg->SensorResp.Val[1], Msg->SensorResp.Val[2]);									
+								printf("BatF%f ADD: %f  ADW: %f  ADBat: %f\r\n", ProcState.BatVoltF, Msg->SensorResp.Val[0], Msg->SensorResp.Val[1], Msg->SensorResp.Val[2]);									
 							
-							ProcState.WaterLevel   =  GetWaterLevel(ProcState.ADWaterLevel) * 13 / ProcState.BatVoltF;
-							ProcState.DieselLevel  =  GetDieselLevel(ProcState.ADDieselLevel) * 13 / ProcState.BatVoltF;
+							// Compensate for battery voltage 
+							ProcState.ADWaterLevel = ProcState.ADWaterLevel * 13 / ProcState.BatVoltF; 
+							ProcState.ADDieselLevel = ProcState.ADDieselLevel * 13 / ProcState.BatVoltF;
+							// Calculate water and diesel levels
+							ProcState.WaterLevel   =  GetWaterLevel(ProcState.ADWaterLevel);
+							ProcState.DieselLevel  =  GetDieselLevel(ProcState.ADDieselLevel);
 						}   
 						if ((ProcState.ModeState == Water) || (ProcState.ModeState == Diesel) ) { // Fast update
 					     REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExtFst", SIGInitMeasADExt, 1 Sec);
