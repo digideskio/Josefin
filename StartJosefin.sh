@@ -1,8 +1,10 @@
 #!/bin/sh
 
+echo "Start Tightvncserver"
+sudo /usr/bin/tightvncserver :1
 
 echo "Start OWFS"
-sudo /opt/owfs/bin/owfs -uall --usb_regulartime --allow_other /mnt/1wire/
+sudo /usr/bin/owfs -uall --usb_regulartime --allow_other /mnt/1wire/
 # usb_regulartime used to handle LCD-display
 
 echo "create folder for Byteport reporting"
