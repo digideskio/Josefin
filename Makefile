@@ -46,7 +46,7 @@ CFLAGS-RPI += -I$(WIRINGPILIB)
 
 LDLIBS-RPI += -lwiringPi
 LDLIBS-RPI += -lcurl
-
+LDLIBS-RPI += -lpthread # Support library for pthreads
 #$(EXEC): $(OBJS)
 #$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
 #  echo Default Compiled

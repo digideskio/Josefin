@@ -150,12 +150,14 @@ int    main(int argc, char *argv[]) {
 		FQueue[Idx].ADWater 		= SENS_DEF_VAL;
 		FQueue[Idx].ADBatVoltF 	= SENS_DEF_VAL;
 	} 
-#ifdef RPI_DEFINED
+/*
+	#ifdef RPI_DEFINED
 	if (wiringPiSetup () == -1)  // Initiate WiringPi lib
     exit (1) ;  
 	ProcState.fd.lcd = lcdInit (4, 20, 4, 11, 10, 0,1,2,3,0,0,0,0) ; // Initiate LCD driver
 	// Note, HW wiring must correspond to this...
 #elif BB_DEFINED
+
 //ProcState.fd.lcd = lcdInit (4, 20, 4, P8_3, P8_4, P8_5, P8_11, P8_12, P8_14,P8_12,0,0,0) ; // Initiate LCD driver
 
 //P8_14 ==> DB7
@@ -165,18 +167,21 @@ int    main(int argc, char *argv[]) {
 //P8_4  ==> RS
 //P8_3  ==> E
 
-#endif		
+#endif	
+*/	
 
    memset(LCDText, ' ', 100); // Clear display buffer
-#ifdef RPI_DEFINED
+/*
+	 #ifdef RPI_DEFINED
 	//  LCD_CTRL(ProcState.fd.lcd, LCD_Reset);
-    LCD_CLEAR(ProcState.fd.lcd);
-    LCD_HOME(ProcState.fd.lcd);	
+//    LCD_CLEAR(ProcState.fd.lcd);
+//    LCD_HOME(ProcState.fd.lcd);	
 //	LCD_CTRL(ProcState.fd.lcd, LCD_On); 
 //	LCD_CTRL(ProcState.fd.lcd, LCD_Cursor_On);
 
 
 #endif  
+*/
   InitProc(&ProcState); sleep(2);
  // signal(SIGINT, QuitProc);  // Handles CTRL-C command
 
@@ -189,7 +194,8 @@ int    main(int argc, char *argv[]) {
 	sprintf(&LCDText[0], " %s started   Ver: %s                       Golding production ", ProcState.DeviceName, __DATE__ );
  // LCD_WRITE(ProcState.fd.lcd, 1, 1, LCDText);
 
-#ifdef LCD_DEFINED	
+/*
+ #ifdef LCD_DEFINED	
 	lcdPosition (ProcState.fd.lcd, 0, 0) ;
 	for (Idx = 0; Idx < 80; Idx++)
 	  lcdPutchar(ProcState.fd.lcd, LCDText[Idx]);		
@@ -198,7 +204,7 @@ int    main(int argc, char *argv[]) {
 	//ret = write(ProcState.fd.lcd, LCDText, 80);
 	// printf("LCD Write: %d bytes\r\n", ret);
 #endif
-
+*/
 if (ProcState.fd.lcd >= 0) {  // If LCD attached
 	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
 	LCD1W_WRITE(LCD1, 3, &LCDText[Line2]);
@@ -814,6 +820,7 @@ if (PState->DevLCDDefined) {
 //sleep(5);
  // LCD_WRITE(PState->fd.lcd, 1, 1, LCDText);	
  int i;
+/*
  #ifdef RPI_DEFINED
  lcdPosition (PState->fd.lcd, 0, 0);
  for (i = 0; i < 80; i++) 
@@ -821,6 +828,7 @@ if (PState->DevLCDDefined) {
 #elif BB_DEFINED
 
 #endif
+*/
 if (ret < 0) printf("LCD Write 2: %d bytes\r\n", ret);
 
 //	if (DebugOn) {

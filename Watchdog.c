@@ -29,20 +29,21 @@
 void * Watchdog(enum ProcTypes_e ProcType) {
 int fd_led;
 
-#ifdef RPI_DEFINED
+/*#ifdef RPI_DEFINED
 	pinModeGpio(OK_LED, OUTPUT);
 #elif BB_DEFINED
+*/
 #define LED4_MP  "/sys/class/leds/beaglebone:green:usr3/brightness"
 	OPEN_PIPE(fd_led, LED4_MP, O_WRONLY|O_NONBLOCK);
-#endif
+//#endif
   // Wiringpi lib already initialized by Main program
 
 	LOG_MSG("Started\n"); 
 	while (TRUE) {
 #ifdef RPI_DEFINED
-		digitalWriteGpio(OK_LED, 0);
+	//	digitalWriteGpio(OK_LED, 0);
 		delay (500);
-		digitalWriteGpio(OK_LED, 1);
+	//	digitalWriteGpio(OK_LED, 1);
 		delay (500);			
 #elif BB_DEFINED
 		write(fd_led, "1", 1);
