@@ -7,8 +7,6 @@ echo "Start OWFS"
 sudo /usr/bin/owfs -uall --usb_regulartime --allow_other /mnt/1wire/
 # usb_regulartime used to handle LCD-display
 
-echo "create folder for Byteport reporting"
-mkdir /tmp/byteport
 
 echo "Starting Josefin script"
     # run application you want to start

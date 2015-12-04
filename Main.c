@@ -93,7 +93,7 @@ struct  FQ_s  { // used to make a smoother presentation
 int    main(int argc, char *argv[]) {
 	union SIGNAL			 		*Msg;
 	unsigned char       	Buf[sizeof(union SIGNAL)];
-  char                	TimeStamp[100], TimeStampStop[100];
+  char                	TimeStamp[100], TimeStampStop[100], FilePath[40];
   unsigned char       	UpdateInterval, Idx;
 	enum ProcTypes_e    	ProcessorType;
 	char									ByteportText[100];
@@ -492,21 +492,40 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 				}
 
        LCDDisplayUpdate(&ProcState);
-			 // Write to file for Byteport reporting. create file if not opened yet
-				ProcState.fd.BatVoltF = fopen("/tmp/byteport/BatVoltF", "w+");								
-				sprintf(ByteportText, "%-.1f", ProcState.BatVoltF);
-				fprintf(ProcState.fd.BatVoltF, ByteportText);
-				fclose(ProcState.fd.BatVoltF);
-						
-				ProcState.fd.DieselLevel = fopen("/tmp/byteport/DieselLevel", "w+");								
-				sprintf(ByteportText, "%-.1f", ProcState.DieselLevel);
-				fprintf(ProcState.fd.DieselLevel, ByteportText);
-				fclose(ProcState.fd.DieselLevel);
-						
-				ProcState.fd.WaterLevel = fopen("/tmp/byteport/WaterLevel", "w+");								
-				sprintf(ByteportText, "%-.1f", ProcState.WaterLevel);
-				fprintf(ProcState.fd.WaterLevel, ByteportText);
-				fclose(ProcState.fd.WaterLevel);						
+			 // Write to file for Byteport reporting. Create file if not opened yet
+			 if (DbgTest == 1) {printf("Enter send to Byteport\r\n");usleep(200000);}
+			 sprintf(FilePath, "/tmp/BatVoltF");  // Set filename
+			 if((ProcState.fd.BatVoltF = fopen(FilePath, "w+")) == NULL)  {  // Check that file exists
+					sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, FilePath);
+					CHECK(FALSE, InfoText);
+				} else {		
+				  sprintf(ByteportText, "%-.1f", ProcState.BatVoltF);
+				  fprintf(ProcState.fd.BatVoltF, ByteportText);
+				  fclose(ProcState.fd.BatVoltF);
+				}	
+				
+  		 if (DbgTest == 1) {printf("BatVoltF written\r\n");usleep(200000);}						
+			 sprintf(FilePath, "/tmp/DieselLevel");  // Set filename
+			 if((ProcState.fd.DieselLevel = fopen(FilePath, "w+")) == NULL)  {  // Check that file exists
+					sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, FilePath);
+					CHECK(FALSE, InfoText);
+				} else {					
+			  	sprintf(ByteportText, "%-.1f", ProcState.DieselLevel);
+			  	fprintf(ProcState.fd.DieselLevel, ByteportText);
+				  fclose(ProcState.fd.DieselLevel);
+				}
+				
+				if (DbgTest == 1) {printf("DieselLevel written\r\n");usleep(200000);}						
+		    sprintf(FilePath, "/tmp/WaterLevel");  // Set filename
+			  if((ProcState.fd.WaterLevel = fopen(FilePath, "w+")) == NULL)  {  // Check that file exists
+					sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, FilePath);
+					CHECK(FALSE, InfoText);
+				} else {							
+		  		sprintf(ByteportText, "%-.1f", ProcState.WaterLevel);
+			  	fprintf(ProcState.fd.WaterLevel, ByteportText);
+			  	fclose(ProcState.fd.WaterLevel);
+				}
+				if (DbgTest == 1) {printf("Leaving send to Byteport\r\n");usleep(200000);}		
  /*       if (Msg->SensorResp.Sensor == WATER_TEMP) {// Just to secure only 1 line when no display present
           LCDDisplayUpdate(&ProcState);
         }  
