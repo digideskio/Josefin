@@ -313,7 +313,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if(ProcState.fd.OutTemp == 0)  // No file descriptor defined
-						ProcState.fd.OutTemp = fopen("/tmp/byteport/OutTemp", "w+");	
+						ProcState.fd.OutTemp = fopen("/tmp/ByteportReports/OutTemp", "w+");	
 						sprintf(ByteportText, "%-.1f", ProcState.OutTemp);
 						fprintf(ProcState.fd.OutTemp, ByteportText);
 						fclose(ProcState.fd.OutTemp);
@@ -331,7 +331,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.BoxTemp == 0)  // No file descriptor defined
-						ProcState.fd.BoxTemp = fopen("/tmp/byteport/BoxTemp", "w+");	
+						ProcState.fd.BoxTemp = fopen("/tmp/ByteportReports/BoxTemp", "w+");	
 						sprintf(ByteportText, "%-.1f", ProcState.BoxTemp);
 						fprintf(ProcState.fd.BoxTemp, ByteportText);
 						fclose(ProcState.fd.BoxTemp);				
@@ -348,7 +348,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.RefrigTemp == 0)  // No file descriptor defined
-						ProcState.fd.RefrigTemp = fopen("/tmp/byteport/RefrigTemp", "w+");	
+						ProcState.fd.RefrigTemp = fopen("/tmp/ByteportReports/RefrigTemp", "w+");	
 							
 						sprintf(ByteportText, "%-.1f", ProcState.RefrigTemp);
 						fprintf(ProcState.fd.RefrigTemp, ByteportText);
@@ -366,7 +366,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.WaterTemp == 0)  // No file descriptor defined
-						ProcState.fd.WaterTemp = fopen("/tmp/byteport/WaterTemp", "w+");	
+						ProcState.fd.WaterTemp = fopen("/tmp/ByteportReports/WaterTemp", "w+");	
 							
 						sprintf(ByteportText, "%-.1f", ProcState.WaterTemp);
 						fprintf(ProcState.fd.WaterTemp, ByteportText);
@@ -385,7 +385,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.HWaterTemp == 0)  // No file descriptor defined
-							ProcState.fd.HWaterTemp = fopen("/tmp/byteport/HWaterTemp", "w+");	
+							ProcState.fd.HWaterTemp = fopen("/tmp/ByteportReports/HWaterTemp", "w+");	
 							
 						sprintf(ByteportText, "%-.1f", ProcState.HWaterTemp);
 						fprintf(ProcState.fd.HWaterTemp, ByteportText);
@@ -404,7 +404,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.SeaTemp == 0)  // No file descriptor defined
-						ProcState.fd.SeaTemp = fopen("/tmp/byteport/SeaTemp", "w+");								
+						ProcState.fd.SeaTemp = fopen("/tmp/ByteportReports/SeaTemp", "w+");								
 						sprintf(ByteportText, "%-.1f", ProcState.SeaTemp);
 						fprintf(ProcState.fd.SeaTemp, ByteportText);
 						fclose(ProcState.fd.SeaTemp);
@@ -494,7 +494,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
        LCDDisplayUpdate(&ProcState);
 			 // Write to file for Byteport reporting. Create file if not opened yet
 			 if (DbgTest == 1) {printf("Enter send to Byteport\r\n");usleep(200000);}
-			 sprintf(FilePath, "/tmp/BatVoltF");  // Set filename
+			 sprintf(FilePath, "/tmp/ByteportReports/BatVoltF");  // Set filename
 			 if((ProcState.fd.BatVoltF = fopen(FilePath, "w+")) == NULL)  {  // Check that file exists
 					sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, FilePath);
 					CHECK(FALSE, InfoText);
@@ -505,7 +505,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 				}	
 				
   		 if (DbgTest == 1) {printf("BatVoltF written\r\n");usleep(200000);}						
-			 sprintf(FilePath, "/tmp/DieselLevel");  // Set filename
+			 sprintf(FilePath, "/tmp/ByteportReports/DieselLevel");  // Set filename
 			 if((ProcState.fd.DieselLevel = fopen(FilePath, "w+")) == NULL)  {  // Check that file exists
 					sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, FilePath);
 					CHECK(FALSE, InfoText);
@@ -516,7 +516,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 				}
 				
 				if (DbgTest == 1) {printf("DieselLevel written\r\n");usleep(200000);}						
-		    sprintf(FilePath, "/tmp/WaterLevel");  // Set filename
+		    sprintf(FilePath, "/tmp/ByteportReports/WaterLevel");  // Set filename
 			  if((ProcState.fd.WaterLevel = fopen(FilePath, "w+")) == NULL)  {  // Check that file exists
 					sprintf(InfoText, "ERROR: %s %d Can not open file %s \n", strerror(errno), errno, FilePath);
 					CHECK(FALSE, InfoText);
@@ -1037,7 +1037,7 @@ void   InitProc(struct ProcState_s *PState) {
   remove(MAIN_PIPE);
   remove(TIMO_PIPE);
   umask(0);
-  //mknod("tmp/byteport/",  S_IFDIR|0666, 0); 
+  //mknod("tmp/ByteportReports/",  S_IFDIR|0666, 0); 
 	mknod(KBD_PIPE,  S_IFIFO|0666, 0); 
   mknod(ONEWIRE_PIPE, S_IFIFO|0666, 0); 
   mknod(MAIN_PIPE, S_IFIFO|0666, 0); 

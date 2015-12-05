@@ -41,4 +41,4 @@ if __name__ == '__main__':
 		client = ByteportHttpClient(NAMESPACE, API_KEY, uid, initial_heartbeat=False)
 
 		# NOTE: This will block the current thread!
-		client.poll_directory_and_store_upon_content_change('/tmp', uid, poll_interval=POLL_INTERVAL)
+		client.poll_directory_and_store_upon_content_change('/tmp/ByteportReports', uid, poll_interval=POLL_INTERVAL)

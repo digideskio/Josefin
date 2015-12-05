@@ -9,6 +9,7 @@ import re
 import os
 import socks
 import json
+import cookielib
 
 from urllib2 import HTTPError
 from utils import DictDiffer
@@ -24,6 +25,9 @@ class ByteportClientException(Exception):
 
 
 class ByteportConnectException(ByteportClientException):
+    pass
+
+class ByteportLoginFailedException(Exception):
     pass
 
 
@@ -123,16 +127,48 @@ class AbstractByteportClient:
         return utf8_data
 
 
-class AbstractByteportHttpClient(AbstractByteportClient):
+class ByteportHTTPRedirectHandler(urllib2.HTTPRedirectHandler):
+    def http_error_302(self, req, fp, code, msg, headers):
+        print "Cookie Manip Right Here"
+        return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
 
-    DEFAULT_BYTEPORT_API_STORE_URL = 'http://api.byteport.se/services/store/'
-    DEFAULT_BYTEPORT_API_STORE_URL_HTTPS = 'http://api.byteport.se/services/store/'
+    http_error_301 = http_error_303 = http_error_307 = http_error_302
+
+
+class ByteportHttpClient(AbstractByteportClient):
+
+    DEFAULT_BYTEPORT_API_PROTOCOL = 'http'
+    DEFAULT_BYTEPORT_API_HOSTNAME = 'api.byteport.se'
+
+    # Storing
+    DEFAULT_BYTEPORT_STORE_PATH = '/api/v1/timeseries/'
+    DEFAULT_BYTEPORT_API_STORE_URL = '%s://%s%s' % (DEFAULT_BYTEPORT_API_PROTOCOL,
+                                                    DEFAULT_BYTEPORT_API_HOSTNAME,
+                                                    DEFAULT_BYTEPORT_STORE_PATH)
+
+    # DATETIME FORMAT
+    ISO8601 = '%Y-%m-%dT%H:%M:%S.%f'
+
+    # APIV1 URLS
+    LOGIN_PATH = '/api/v1/login/'
+    LOGOUT_PATH = '/api/v1/logout/'
+    SESSION_PATH = '/api/v1/session/'
+    ECHO_PATH = '/api/v1/echo/'
+
+    LIST_NAMESPACES      = '/api/v1/namespace/'
+    QUERY_DEVICES        = '/api/v1/search_devices/'
+    GET_DEVICE           = '/api/v1/namespace/%s/device/'
+    GET_DEVICE_TYPE      = '/api/v1/namespace/%s/device_type/'
+    GET_FIRMWARE         = '/api/v1/namespace/%s/device_type/%s/firmware/'
+    GET_FIELD_DEFINITION = '/api/v1/namespace/%s/device_type/%s/field_definition/'
+
+    LOAD_TIMESERIES_DATA = '/api/v1/timeseries/%s/%s/%s/'
 
     def __init__(self,
-                 namespace_name,
-                 api_key,
-                 default_device_uid,
-                 byteport_api_store_url=DEFAULT_BYTEPORT_API_STORE_URL,
+                 namespace_name=None,
+                 api_key=None,
+                 default_device_uid=None,
+                 byteport_api_hostname=DEFAULT_BYTEPORT_API_HOSTNAME,
                  proxy_type=socks.PROXY_TYPE_SOCKS5,
                  proxy_addr="127.0.0.1",
                  proxy_port=None,
@@ -141,11 +177,18 @@ class AbstractByteportHttpClient(AbstractByteportClient):
                  initial_heartbeat=True
                  ):
 
+        # If any of the following are left as default (None), no store methods can be used
         self.namespace_name = namespace_name
-        self.device_uid = default_device_uid
         self.api_key = api_key
-        self.base_url = byteport_api_store_url+'%s' % namespace_name
-        logging.info('Storing data to Byteport using %s/%s/' % (self.base_url, default_device_uid))
+
+        if None in [namespace_name, api_key]:
+            logging.info("Store functions using API-key methods are disabled as no Namespace or API-key was supplied.")
+            self.store_enabled = False
+        else:
+            self.store_enabled = True
+
+        self.device_uid = default_device_uid
+        self.byteport_api_hostname = byteport_api_hostname
 
         # Ie. for tunneling HTTP via SSH, first do:
         # ssh -D 5000 -N username@sshserver.org
@@ -155,44 +198,174 @@ class AbstractByteportHttpClient(AbstractByteportClient):
         else:
             self.opener = None
 
-        # Make empty test call to verify the credentials
-        if initial_heartbeat:
-            # This can also act as heart beat, no need to send data to signal "online" in Byteport
-            self.store()
+        self.cookiejar = cookielib.CookieJar()
 
-    def make_request(self, url, device_uid, data=None):
+        if self.store_enabled:
+            self.store_base_url = '%s://%s%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL,
+                                                    byteport_api_hostname,
+                                                    self.DEFAULT_BYTEPORT_STORE_PATH,
+                                                    namespace_name)
+
+            logging.info('Storing data to Byteport using %s/%s/' % (self.store_base_url, default_device_uid))
+
+            # Make empty test call to verify the credentials
+            if initial_heartbeat:
+                # This can also act as heart beat, no need to send data to signal "online" in Byteport
+                self.store()
+
+    def login(self, username, password, login_path=LOGIN_PATH):
+
+        url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, login_path)
+
+        # This will induce a GET-call to obtain the csrftoken needed for the actual login
+        self.make_request(url)
+
+        # Now, also extract the value of the csrftoken since we need it as a post data also
+        csrftoken = self.__get_value_of_cookie('csrftoken')
+
+        if csrftoken is None:
+            raise ByteportClientException("Failed to extract csrftoken.")
+
+        # And make the POST-call to login
+        try:
+            self.make_request(url=url,
+                              post_data={'username': username,
+                                         'password': password,
+                                         'csrfmiddlewaretoken': csrftoken}
+                              )
+        except ByteportClientForbiddenException as e:
+            raise ByteportLoginFailedException("Failed to login user with name %s" % username)
+
+        # Make sure the sessionid cookie is present in the cookie jar now
+        for cookie in self.cookiejar:
+            if cookie.name == 'sessionid':
+                return
+
+        raise ByteportLoginFailedException("Failed to login user with name %s" % username)
+
+    def __get_value_of_cookie(self, cookie_name):
+        for cookie in self.cookiejar:
+            if cookie.name == cookie_name:
+                return cookie.value
+        return None
+
+    def list_namespaces(self):
+        url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.LIST_NAMESPACES)
+
+        return json.loads(self.make_request(url).read())
+
+    def query_devices(self, term, full=False, limit=20):
+        request_parameters = {'term': term, 'full': u'%s' % full, 'limit': limit}
+        encoded_data = urllib.urlencode(request_parameters)
+        url = '%s://%s%s?%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL,
+                                self.byteport_api_hostname,
+                                self.QUERY_DEVICES,
+                                encoded_data)
+
+        return json.loads(self.make_request(url).read())
+
+#TODO: Deprecated. Remove at some point.
+    def get_device(self, namespace, uid):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.GET_DEVICE)
+
+        encoded_data = urllib.urlencode( {'uid':u'%s' % uid } )
+        url = base_url % (namespace) + "?%s" % encoded_data
+        return json.loads(self.make_request(url).read())
+
+#TODO: Deprecated. Remove at some point.
+    def list_devices(self, namespace, full=False):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.GET_DEVICE)
+        request_parameters = {'full': u'%s' % full}
+        encoded_data = urllib.urlencode(request_parameters)
+
+        url = base_url % namespace + '?%s' % encoded_data
+
+        return json.loads(self.make_request(url).read())
+
+    def get_devices(self, namespace, key=None):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.GET_DEVICE)
+        request_parameters = {}
+        if( key is not None ):
+            request_parameters['key'] = key
+
+        url = base_url % namespace + '?%s' % urllib.urlencode(request_parameters)
+
+        return json.loads(self.make_request(url).read())
+
+
+    def get_device_types(self, namespace, key=None):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.GET_DEVICE_TYPE)
+        request_parameters = {}
+        if( key is not None ):
+            request_parameters['key'] = key
+
+        url = base_url % namespace + '?%s' % urllib.urlencode(request_parameters)
+
+        return json.loads(self.make_request(url).read())
+
+    def get_firmwares(self, namespace, device_type_id, key=None):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.GET_FIRMWARE)
+        request_parameters = {}
+        if( key is not None ):
+            request_parameters['key'] = key
+
+        url = base_url % (namespace, device_type_id) + '?%s' % urllib.urlencode(request_parameters)
+
+        return json.loads(self.make_request(url).read())
+
+    def get_field_definitions(self, namespace, device_type_id, key=None):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.GET_FIELD_DEFINITION)
+        request_parameters = {}
+        if key is not None:
+            request_parameters['key'] = key
+
+        url = base_url % (namespace, device_type_id) + '?%s' % urllib.urlencode(request_parameters)
+
+        return json.loads(self.make_request(url).read())
+
+    def load_timeseries_data(self, namespace, uid, field_name, from_time, to_time):
+        base_url = '%s://%s%s' % (self.DEFAULT_BYTEPORT_API_PROTOCOL, self.byteport_api_hostname, self.LOAD_TIMESERIES_DATA)
+        request_parameters = {'from': from_time.strftime(self.ISO8601), 'to': to_time.strftime(self.ISO8601)}
+        encoded_data = urllib.urlencode(request_parameters)
+
+        url = base_url % (namespace, uid, field_name) + '?%s' % encoded_data
+
+        return json.loads(self.make_request(url).read())
+
+    def make_request(self, url, post_data=None):
 
         try:
             logging.debug(url)
             # Set a valid User agent tag since api.byteport.se is CloudFlared
             # TODO: add a proper user-agent and make sure CloudFlare can handle it
             if self.opener:
-                response = self.opener.open(url)
+                return self.opener.open(url)
             else:
-                # NOTE: If data != None, the request will be a POST request instead
-                if data is not None:
-                    data = urllib.urlencode(data)
-                req = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, data=data)
+                headers = {'User-Agent': 'Mozilla/5.0'}
 
-                response = urllib2.urlopen(req)
-            logging.debug(u'Response: %s' % response.read())
+                # NOTE: If post_data != None, the request will be a POST request instead
+                if post_data is not None:
+                    post_data = urllib.urlencode(post_data)
+
+                req = urllib2.Request(url, headers=headers, data=post_data)
+
+                opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar))
+                return opener.open(req)
 
         except HTTPError as http_error:
-            logging.error(u'%s' % http_error)
+            logging.error(u'HTTPError accessing %s, Error was: %s' % (url, http_error))
             if http_error.code == 403:
-                message = u'Verify that the namespace %s does allow writes by HTTP, and also if the correct' \
-                          u'request method is set and usd (ie GET and/or POST), and that the ' \
-                          u'API key is correct.' % self.namespace_name
+                message = u'403, You were not allowed to access the requested resource.'
                 logging.info(message)
                 raise ByteportClientForbiddenException(message)
             if http_error.code == 404:
-                message = u'Make sure the device %s is registered under ' \
-                          u'namespace %s.' % (device_uid, self.namespace_name)
+                message = u'404, Make sure the device(s) is registered under ' \
+                          u'namespace %s.' % self.namespace_name
                 logging.info(message)
                 raise ByteportClientDeviceNotFoundException(message)
 
         except urllib2.URLError as e:
-            logging.error(u'%s' % e)
+            logging.error(u'URLError accessing %s, Error was: %s' % (url, e))
             logging.info(u'Got URLError, make sure you have the correct network connections (ie. to the internet)!')
             if self.opener is not None:
                 logging.info(u'Make sure your proxy settings are correct and you can connect to the proxy host you specified.')
@@ -201,12 +374,6 @@ class AbstractByteportHttpClient(AbstractByteportClient):
     # Simple wrapper for logging with ease
     def log(self, message, level='info', device_uid=None):
         self.store({level: message}, device_uid)
-
-    def store(self, data=None, device_uid=None):
-        raise NotImplementedError("Store is not implemented in this class that is considered Abstract")
-
-
-class ByteportHttpPostClient(AbstractByteportHttpClient):
 
     #
     #    Store a single file vs a field name to Byteport via HTTP POST with optional compresstion
@@ -327,22 +494,12 @@ class ByteportHttpPostClient(AbstractByteportHttpClient):
             device_uid = self.device_uid
 
         data['_key'] = self.api_key
-        url = '%s/%s/' % (self.base_url, device_uid)
+        url = '%s/%s/' % (self.store_base_url, device_uid)
 
         # Encode data to UTF-8 before storing
         utf8_encoded_data = self.convert_data_to_utf8(data)
 
-        self.make_request(url, device_uid, utf8_encoded_data)
-
-
-'''
-    The preferred way of accessing byteport is through HTTPS POST calls.
-
-    This class reflects that.
-
-'''
-class ByteportHttpClient(ByteportHttpPostClient):
-    pass
+        self.make_request(url, utf8_encoded_data)
 
 '''
     Simple client for sending data using HTTP GET request (ie. data goes as request parameters)
@@ -351,8 +508,10 @@ class ByteportHttpClient(ByteportHttpPostClient):
 
     Since URLs are limited to 2Kb, the maximum allowed data to send is limited for each request.
 
+    WARNING: May become deprecated!
+
 '''
-class ByteportHttpGetClient(AbstractByteportHttpClient):
+class ByteportHttpGetClient(ByteportHttpClient):
 
     # Can use another device_uid to override the one used in the constructor
     # Useful for Clients that acts as proxies for other devices, ie. over a sensor-network
@@ -371,11 +530,12 @@ class ByteportHttpGetClient(AbstractByteportHttpClient):
         # Encode data to UTF-8 before storing
         utf8_encoded_data = self.convert_data_to_utf8(data)
 
+        # By URL-encoding, the make_request call will be made using GET-request
         encoded_data = urllib.urlencode(utf8_encoded_data)
 
-        url = '%s/%s/?%s' % (self.base_url, device_uid, encoded_data)
+        url = '%s/%s/?%s' % (self.store_base_url, device_uid, encoded_data)
 
-        self.make_request(url, device_uid)
+        self.make_request(url)
 
 
 try:
@@ -407,7 +567,9 @@ class ByteportStompClient(AbstractByteportClient):
             self.client = Stomp(self.CONFIG)
 
             try:
-                self.client.connect(headers={'login': login, 'passcode': passcode}, host=namespace)
+                # Convention: set vhost to the namespace. This will require a message-boss consuming on this vhost!!!
+                vhost = namespace
+                self.client.connect(headers={'login': login, 'passcode': passcode}, host=vhost)
                 print "Connected to %s using protocol version %s" % (broker_host, self.client.session.version)
             except StompConnectionError:
                 pass

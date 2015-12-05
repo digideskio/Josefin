@@ -3,20 +3,26 @@ Collection of open source (BSD Licence) code examples useful for connecting to t
 
 Read all about it here
 
-www.byteport.se and 
+https://www.byteport.se/home and 
 
 Sign up for an account to get started.
 
 It is **free** for small volume users, such as hobbyists, academics and start-ups.
 
+If you would like to build a web-application built upon this API using only HTML and Javascript, you should check out 
+one of our other open git-repositorys: https://github.com/iGW/byteport-application-skeletons for some fully working
+project skeletons that should get you started in no time.
+
 ## API documentation
+You can find the API v1 specification here: https://github.com/iGW/byteport-api/blob/master/APIv1.adoc
+
 ### Byteport data model
 Byteport accepts:
 * Numbers
 * Text
 * Objects
 
-And so you may specify what kind of object you are storing by assigning a media type (formerly termed MIME-type) that will be supplied when fetching the data again.
+When you store Objects, you may specify what kind of object you are storing by assigning a media type (formerly termed MIME-type) that will be supplied when fetching the data again.
 
 ### Considerations to HTTP GET API
 While storing data usign HTTP GET calls might seem a bit backwards. But it is sometimes a nice feature for quick and dirty scenarios. The only caveat is the data size **limitation of 2 Kb**.
