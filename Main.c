@@ -150,6 +150,8 @@ int    main(int argc, char *argv[]) {
 		FQueue[Idx].ADWater 		= SENS_DEF_VAL;
 		FQueue[Idx].ADBatVoltF 	= SENS_DEF_VAL;
 	} 
+  
+  wiringPiSetup ();
 /*
 	#ifdef RPI_DEFINED
 	if (wiringPiSetup () == -1)  // Initiate WiringPi lib

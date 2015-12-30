@@ -7,6 +7,10 @@ apt-get owfs
 apt-get tightvncserver
 apt-get samba
 
+Samba: Setup user and add user with password
+adduser xxx
+sambpasswd -a xxx
+
 Installera Gordons libwiringpi
 http://wiringpi.com/download-and-install/
 

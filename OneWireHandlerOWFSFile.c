@@ -285,6 +285,7 @@ char 						Scan4Sensors(void) {
     if((fp = fopen(Addr, "r")) != NULL)  {
       fclose(fp);		
 	//printf("Open ok: %s\r\n", Addr);  // For debugging of new sensors
+  
       Id = ExpOneWireList[Idx].Id;
 
       if (!(OneWireList[Id].Present)) {
@@ -318,7 +319,7 @@ char 						Scan4Sensors(void) {
 				}
       }  
     } else {// End if   
-    // printf("ERROR: %s  Sensor :  %s\n", strerror(errno), ExpOneWireList[Idx].Path);
+     //printf("ERROR: %s  Sensor :  %s\n", strerror(errno), ExpOneWireList[Idx].Path);
       errno = 0;
     }
   } // End for

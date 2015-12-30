@@ -132,7 +132,7 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
       OpButOn = TRUE;
       Msg->SigNo = SIGOpButOn;// Send signal	
       SEND(fd_main, Msg, sizeof(union SIGNAL));
-		//printf("Oppressed %d\r\n", ret);
+		printf("Oppressed %d\r\n", ret);
 		}
 		
 // Check if Right button pressed			
@@ -148,7 +148,7 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
       RgtButOn = TRUE;
       Msg->SigNo = SIGRghtButOn;// Send signal	
       SEND(fd_main, Msg, sizeof(union SIGNAL));
-		//printf("Rgtpressed %d\r\n", ret);
+		printf("Rgtpressed %d\r\n", ret);
 		}
 
 

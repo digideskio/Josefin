@@ -19,7 +19,7 @@
 #include <malloc.h>
 #ifdef RPI_DEFINED
 #include <wiringPi.h>
-#define OK_LED  16
+#define OK_LED  47
 #endif
 
 #include "SysDef.h"
@@ -29,27 +29,22 @@
 void * Watchdog(enum ProcTypes_e ProcType) {
 int fd_led;
 
-/*#ifdef RPI_DEFINED
-	pinModeGpio(OK_LED, OUTPUT);
+#ifdef RPI_DEFINED
+#define LED_OK "/sys/class/leds/led0/brightness" 
+	//pinMode(OK_LED, OUTPUT);
+  OPEN_PIPE(fd_led, LED_OK, O_WRONLY|O_NONBLOCK);
 #elif BB_DEFINED
-*/
 #define LED4_MP  "/sys/class/leds/beaglebone:green:usr3/brightness"
 	OPEN_PIPE(fd_led, LED4_MP, O_WRONLY|O_NONBLOCK);
-//#endif
+#endif
   // Wiringpi lib already initialized by Main program
 
 	LOG_MSG("Started\n"); 
 	while (TRUE) {
-#ifdef RPI_DEFINED
-	//	digitalWriteGpio(OK_LED, 0);
-		delay (500);
-	//	digitalWriteGpio(OK_LED, 1);
-		delay (500);			
-#elif BB_DEFINED
 		write(fd_led, "1", 1);
 		usleep (500000);
 		write(fd_led, "0", 1);
 		usleep(500000);			
-#endif					
+				
 	}
 }		

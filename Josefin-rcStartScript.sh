@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:          JosefinStartScript
+# Provides:          Josefin-rcStartScript
 # Required-Start:    $network $local_fs $remote_fs
 # Required-Stop:     $network $local_fs $remote_fs
 # Default-Start:     2 3 4 5
@@ -29,14 +29,14 @@
 #CPUType=1  
  
 # BeagleBone Black
-CPUType=2
+CPUType=1
 
  case "$1" in
   start)
-	if [ $CPUType == 1 ]; then
+	if [ $CPUType -eq 1 ]; then
     echo "Start OWFS-Raspberry"
 # usb_regulartime used to handle LCD-display
-	  sudo /opt/owfs/bin/owfs -uall --usb_regulartime --allow_other /mnt/1wire/
+	  sudo /usr/bin/owfs -uall --usb_regulartime --allow_other /mnt/1wire/
 
 		# Start Tightvncserver		
 		sudo /usr/bin/tightvncserver :1
