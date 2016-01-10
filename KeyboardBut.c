@@ -22,7 +22,7 @@
 #include <signal.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include "OneWireHandlerOWFSFile.h"
+#include "OWHndlrOWFSFile.h"
 #ifdef RPI_DEFINED
 #include <wiringPi.h>
 
@@ -34,10 +34,10 @@
 
 #include "SysDef.h"
 //#include "KeyboardIO.h"
-#include "TimeoutHandler.h"
+//#include "TimHndlr.h"
 #include "Main.h"
 
-void * RdKeyboardBut(enum ProcTypes_e ProcType) {
+void * RdButton(enum ProcTypes_e ProcType) {
   int 	Idx, ButIdx, fd_I2CKnob, fd_main, fd_timo, fd_OpBut, fd_LftBut, fd_RgtBut, ret;
   char 	data_read[2];
   char 	led[10], OpButton[10], LftButton[10], RgtButton[10];
@@ -93,12 +93,10 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
 	gpio_set_dir(But_Rgt, INPUT_PIN);
 #endif
 
-  LOG_MSG("Started\n");
+  LOG_MSG("Button Started\n");
 	Idx = 0;
 	ButIdx = 0;
   while(TRUE) {
-
-
 		//Idx++;
     Msg = (void *) Buf; // Set ptr to receiving buffer
     usleep(20000); // Timeout between each scan of keyboard, to be adjusted
@@ -107,24 +105,8 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
     ret = digitalRead(But_Op);
 #elif BB_DEFINED
 		gpio_get_value(But_Op, &ret);
-	
-#elif HOST_DEFINED
-
-						printf("Select (O)peration (R)ight : ");
-						switch (getchar()) {
-      	 case 'O':
-      		 	Msg->SigNo = SIGOpButOn;// Send signal	
-      			 SEND(fd_main, Msg, sizeof(union SIGNAL));
-							 break;
-
-							 case 'R':
-	      	 	Msg->SigNo = SIGRghtButOn;// Send signal	
-	      		 SEND(fd_main, Msg, sizeof(union SIGNAL));
-						  break;
-					 }
-
-
 #endif
+  
 		//printf(" OP: %d\r", ret);
 		if (ret != 0)  // Button is NOT pressed!!
 			OpButOn = FALSE;            // Button not pressed
@@ -140,8 +122,8 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
     ret = digitalRead(But_Rgt);		
 #elif BB_DEFINED	
 		gpio_get_value(But_Rgt, &ret);
-	
 #endif // RPI_DEFINED
+
 		if (ret != 0)	// Button is NOT pressed!!
 			RgtButOn = FALSE;            // Button not pressed
     else if (RgtButOn == FALSE)  { // Button pressed and released since last read
@@ -155,3 +137,49 @@ void * RdKeyboardBut(enum ProcTypes_e ProcType) {
    } // while
 	  exit(0);
 }; 
+// Reads keyboard input, mainly for debugging
+void * RdKeyboard(enum ProcTypes_e ProcType) {
+  int 	fd_main, ret;
+  static unsigned char  Buf[sizeof(union SIGNAL)]; // Static due to must be placed in global memory (not stack) otherwise we get OS dump Misaligned data!!!
+  union SIGNAL             *Msg;
+
+  OPEN_PIPE(fd_main, MAIN_PIPE, O_WRONLY);
+  LOG_MSG("Kbd Started\n");
+  while(TRUE) {
+		//Idx++;
+    Msg = (void *) Buf; // Set ptr to receiving buffer
+ 		switch (getchar()) {
+     case 'H':  // Help info
+     case 'h':
+   		 	printf("(O)peration, (R)ight, (D)ebug On/Off \r\n");   	
+        printf("\r\n");
+		 break;  
+
+     case 'D':  // Debug On/Off
+     case 'd':
+   		 if (DebugOn == TRUE) {
+         DebugOn = FALSE;
+         LOG_MSG("Debug OFF\n");
+       }
+       else {
+         DebugOn = TRUE;
+         LOG_MSG("Debug ON\n");
+       }  
+		 break;  
+     
+   	 case 'O': // Operation, OP pressed
+     case 'o':
+   		 	Msg->SigNo = SIGOpButOn;// Send signal	
+ 			 SEND(fd_main, Msg, sizeof(union SIGNAL));
+		 break;
+
+		 case 'R': // Right pressed
+     case 'r':
+    	 	Msg->SigNo = SIGRghtButOn;// Send signal	
+   		 SEND(fd_main, Msg, sizeof(union SIGNAL));
+		  break;
+		 }
+   } // while
+	  exit(0);
+}; 
+

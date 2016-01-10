@@ -43,8 +43,8 @@
 #include "Main.h"
  
 #include "KeyboardIO.h"
-#include "TimeoutHandler.h"
-#include "OneWireHandlerOWFSFile.h"
+//#include "TimHndlr.h"
+#include "OWHndlrOWFSFile.h"
 //#include "SocketServer.h"
 
 // Definitions for LCD display
@@ -54,7 +54,8 @@
 #define Line4  60 
 
 void * RdKeyboardKnob(enum ProcTypes_e ProcType);
-void * RdKeyboardBut(enum ProcTypes_e ProcType);
+void * RdButton(enum ProcTypes_e ProcType);
+void * RdKeyboard(enum ProcTypes_e ProcType);
 void * OneWireHandler(enum ProcTypes_e ProcType);
 void * TimeoutHandler(enum ProcTypes_e ProcType);
 void * Watchdog(enum ProcTypes_e ProcType);
@@ -294,7 +295,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 
       case SIGReadSensorResp:
 
-			if (DbgTest == 1) {		
+			  if (DbgTest == 1) {		
 					printf(" SenRsp %d: %10.5f sec V1: %f V2: %f  Status: %s \r\n", 
 								 Msg->SensorResp.Sensor, Msg->SensorResp.CmdTime,
 								 Msg->SensorResp.Val[0], Msg->SensorResp.Val[1],
@@ -312,7 +313,6 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						} // No valid data
 					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 30 Sec);
             LCDDisplayUpdate(&ProcState);
-
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if(ProcState.fd.OutTemp == 0)  // No file descriptor defined
 						ProcState.fd.OutTemp = fopen("/tmp/ByteportReports/OutTemp", "w+");	
@@ -350,8 +350,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.RefrigTemp == 0)  // No file descriptor defined
-						ProcState.fd.RefrigTemp = fopen("/tmp/ByteportReports/RefrigTemp", "w+");	
-							
+						ProcState.fd.RefrigTemp = fopen("/tmp/ByteportReports/RefrigTemp", "w+");								
 						sprintf(ByteportText, "%-.1f", ProcState.RefrigTemp);
 						fprintf(ProcState.fd.RefrigTemp, ByteportText);
 						fclose(ProcState.fd.RefrigTemp);
@@ -368,8 +367,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.WaterTemp == 0)  // No file descriptor defined
-						ProcState.fd.WaterTemp = fopen("/tmp/ByteportReports/WaterTemp", "w+");	
-							
+						ProcState.fd.WaterTemp = fopen("/tmp/ByteportReports/WaterTemp", "w+");						
 						sprintf(ByteportText, "%-.1f", ProcState.WaterTemp);
 						fprintf(ProcState.fd.WaterTemp, ByteportText);
 						fclose(ProcState.fd.WaterTemp);
@@ -387,8 +385,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
             LCDDisplayUpdate(&ProcState);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.HWaterTemp == 0)  // No file descriptor defined
-							ProcState.fd.HWaterTemp = fopen("/tmp/ByteportReports/HWaterTemp", "w+");	
-							
+						ProcState.fd.HWaterTemp = fopen("/tmp/ByteportReports/HWaterTemp", "w+");		
 						sprintf(ByteportText, "%-.1f", ProcState.HWaterTemp);
 						fprintf(ProcState.fd.HWaterTemp, ByteportText);
 						fclose(ProcState.fd.HWaterTemp);
@@ -466,12 +463,14 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 							if ((ProcState.BatVoltF < 10) || (ProcState.BatVoltF > 15)) // Check if reasonable Voltage
 								ProcState.BatVoltF = 13; // Set default value
 								
-							if (DebugOn)
-								printf("BatF%f ADD: %f  ADW: %f  ADBat: %f\r\n", ProcState.BatVoltF, Msg->SensorResp.Val[0], Msg->SensorResp.Val[1], Msg->SensorResp.Val[2]);									
-							
+									
 							// Compensate for battery voltage 
 							ProcState.ADWaterLevel = ProcState.ADWaterLevel * 13 / ProcState.BatVoltF; 
 							ProcState.ADDieselLevel = ProcState.ADDieselLevel * 13 / ProcState.BatVoltF;
+					    if (DebugOn) // Print adjusted AD reading
+								printf(">>>>Converted AD reading[BF %4.2f DL: %4.2f WL: %4.2f BS: %4.2f]\r\n", ProcState.BatVoltF, Msg->SensorResp.Val[0], Msg->SensorResp.Val[1], Msg->SensorResp.Val[2]);									
+
+
 							// Calculate water and diesel levels
 							ProcState.WaterLevel   =  GetWaterLevel(ProcState.ADWaterLevel);
 							ProcState.DieselLevel  =  GetDieselLevel(ProcState.ADDieselLevel);
@@ -485,6 +484,22 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 					  }
 //sprintf(InfoText, "BatF  %7.3f AD: %7.3f \n", ProcState.BatVoltS, Msg->SensorResp.Val[3]);
 //LOG_MSG(InfoText);
+						// Write to file for Byteport reporting. create file if not opened yet
+						//if (ProcState.fd.WaterLevel == 0)  // No file descriptor defined
+						ProcState.fd.WaterLevel = fopen("/tmp/ByteportReports/WaterLevel", "w+");	
+						sprintf(ByteportText, "%-.1f", ProcState.WaterLevel);
+						fprintf(ProcState.fd.WaterLevel, ByteportText);
+						fclose(ProcState.fd.WaterLevel);
+            
+						ProcState.fd.DieselLevel = fopen("/tmp/ByteportReports/DieselLevel", "w+");	
+						sprintf(ByteportText, "%-.1f", ProcState.DieselLevel);
+						fprintf(ProcState.fd.DieselLevel, ByteportText);
+						fclose(ProcState.fd.DieselLevel);	
+            
+						ProcState.fd.BatVoltF = fopen("/tmp/ByteportReports/BatVoltF", "w+");	
+						sprintf(ByteportText, "%-.1f", ProcState.BatVoltF);
+						fprintf(ProcState.fd.BatVoltF, ByteportText);
+						fclose(ProcState.fd.BatVoltF);				
 						
             LCDDisplayUpdate(&ProcState);
 					break; // ADExt
@@ -947,69 +962,7 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
    memset(Str, 0x3E, ScreenPos);
  else
    printf("Severe error...\r\n"); 
-
 }  // BuildBarText
-
-
-/*
-void   ByteportReport(struct ProcState_s *PState) {
-	
-	CURL 			 *curl;
-  CURLcode 		res;
-	char 				CurlText[1000];
-	void 				*Buf;
-	char        RecBuf[100];
-	size_t			NoOfChars, NoOfRecChars, *n;
-
-  NoOfChars = 80; // Maximum chars we can receive
-	n = &NoOfRecChars; // Set n to point to variable
-	Buf = RecBuf; // Set pointer
-	
-	sprintf(CurlText, "http://api.byteport.se/services/store/GoldenSpace/%s/?_key=b43cb5709b37ff3125195b54", ProcState.DeviceName );
-	
-	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
-						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
-	 curl = curl_easy_init();
-  if(curl) {
-			curl_easy_setopt(curl, CURLOPT_URL, CurlText);
-			//curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-//	if (DebugOn) {
-//		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // Set if debugging needed
-//	}
-				
-			// Perform the request, res will get the return code 
-			
-			
-			//LOG_MSG(CurlText); 
-//printf("Curl %d: ", strlen(CurlText));
-			
-			res = curl_easy_perform(curl); // printf(" :\r\n");	
-
-//	curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);			
-//	res = curl_easy_recv(curl, Buf, NoOfChars, n); // printf(" :\r\n");
-//	printf("CurlRec: %s Chars: %d \r\n", RecBuf, NoOfRecChars);
-			
-
-			// Check for errors 
-			if(res != CURLE_OK)
-				printf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res)); 
-				// always cleanup  
-			curl_easy_cleanup(curl);
-	} else {
-		printf(stderr, "curl_easy_init() failed: %d\n", curl);
-	}
-	
-
-	
-	 
-	sprintf(CurlText, "%s&OutTemp=%-.1f&BoxTemp=%-.1f&RefrigTemp=%-.1f&DieselLevel=%-.0f&WaterLevel=%-.0f&BatVoltF=%-.2f&BatVoltS=%-.2f", CurlText,
-						PState->OutTemp, PState->BoxTemp, PState->RefrigTemp, PState->DieselLevel, PState->WaterLevel, PState->BatVoltF, PState->BatVoltS);
-	
-	
-	
-  return; 
-} */
 
 void   InitProc(struct ProcState_s *PState) {
   
@@ -1052,8 +1005,12 @@ void   InitProc(struct ProcState_s *PState) {
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Timout thread", strerror(errno)); 
   errno = 0;
   
-  ret = pthread_create( &PState->Thread.KbdBut,      NULL, (void *) RdKeyboardBut,      (void *) ProcessorType);
-  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Kbd button thread", strerror(errno)); 
+  ret = pthread_create( &PState->Thread.Button,      NULL, (void *) RdButton, (void *) ProcessorType);
+  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Button thread", strerror(errno)); 
+  errno = 0;
+  
+   ret = pthread_create( &PState->Thread.Kbd,      NULL, (void *) RdKeyboard, (void *) ProcessorType);
+  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Kbd thread", strerror(errno)); 
   errno = 0;
 
   ret = pthread_create( &PState->Thread.OneWire,  NULL, (void *) OneWireHandler,  (void *) ProcessorType);

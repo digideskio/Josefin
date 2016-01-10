@@ -7,12 +7,12 @@
  *************************************************************************/
 
 // Define devices, pipes etc.
-#define LCD 					"/dev/lcd"
-#define KBD_PIPE			"/tmp/kbdpipe"
-#define ONEWIRE_PIPE	"/tmp/onewirepipe"
-#define MAIN_PIPE			"/tmp/mainpipe"
-#define TIMO_PIPE			"/tmp/timopipe"
-#define BYTEPOTFOLDER	"/tmp/byteport"
+#define LCD 					  "/dev/lcd"
+#define KBD_PIPE			  "/tmp/kbdpipe"
+#define ONEWIRE_PIPE	  "/tmp/onewirepipe"
+#define MAIN_PIPE			  "/tmp/mainpipe"
+#define TIMO_PIPE			  "/tmp/timopipe"
+#define BYTEPORTFOLDER	"/tmp/byteport"
 
 #define LCDBlkOnTimerVal  60  // No of minutes before turning off inactive backlight
 
@@ -200,7 +200,8 @@ struct ProcState_s {
   } fd;  
   struct thread_s {
     pthread_t     KbdKnob;
-    pthread_t     KbdBut;
+    pthread_t     Kbd;
+    pthread_t     Button;
     pthread_t     OneWire;
     pthread_t     Timeout;
     pthread_t     WDog;

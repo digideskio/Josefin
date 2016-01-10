@@ -7,7 +7,7 @@
  *
  *****************************************************************/
 #include <pthread.h>
-#include "SocketServer.h"
+#include "SockSrv.h"
 //#define DEBUG 
 
 #define TRUE                   1
