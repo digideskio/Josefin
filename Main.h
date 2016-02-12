@@ -176,6 +176,7 @@ struct ProcState_s {
   float         ADDieselLevel;
   float         DieselLevel;
 	char					DevLCDDefined;
+  int           LCD_Id;  // Id no to LCD in OneWireList
   float         UpdateInterval;
 	char					LCDBlkOnTimer; // Time in minutes until backligt is turned off
   char					DeviceName[16]; // The name is defined in OneWireHandlerOWFSFile.c. The name to use for Byteport reporting 
@@ -201,6 +202,7 @@ struct ProcState_s {
   struct thread_s {
     pthread_t     KbdKnob;
     pthread_t     Kbd;
+    pthread_t     LCDKbd;
     pthread_t     Button;
     pthread_t     OneWire;
     pthread_t     Timeout;

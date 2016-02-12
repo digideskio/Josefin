@@ -18,6 +18,7 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+
 //#include <linux/timex.h>   // Measure short time intervals cycles_t get_cycles(void);
 #include "SysDef.h"
 #include "lcd_def.h"
@@ -41,7 +42,7 @@ char            TimeVal2[40];  // Stores time values, to measure executing times
 char            Initiated;     // Indicate if Mean value list is initiated or not.
 
 // Global variables
-struct 	OneWireList_s OneWireList[MAX_NO_OF_DEVICES]; // Maximum no of allowed devices on 1-wire net!
+
 char    		InfoText[300];  // Store info text, Devpath may be long...!
 long long 	RT, TM1, TM2, StartCycles, EndCycles;
 float				DeltaTime;
@@ -322,6 +323,7 @@ char 						Scan4Sensors(void) {
 
 				if (DEV_LCD == OneWireList[Id].DevType) {  // Initiate all 1W LCDs
 					ProcState.DevLCDDefined = TRUE;
+          ProcState.LCD_Id = Id;
 					Set1WLCDOn(OneWireList[Id].Id);   // Turn Display ON
 					Set1WLCDBlkOn(OneWireList[Id].Id); // Turn backlight ON
 					sprintf(InfoText, "%s initiated\r\n", OneWireList[Id].SensName);
@@ -349,11 +351,14 @@ char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, ch
 	ADReadIdx = 6;  // Set number of re-tries at AD read out
   for (idx = 0; idx < 4; idx++)
     AD[idx] = SENS_DEF_VAL;
-  sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+  // We should use uncached here to get fastest possible response!
+  sprintf(Address, "%s%s%s%s", OWFS_MP, "uncached/", SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+   //sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+
  // printf ("AD Fact: %3.2f %s\r\n", ConvLevelAD, SensorPath);
 	
 	if((fp = fopen(Address, "r")) == NULL)  {
-		sprintf(InfoText, "ERROR: %s %d Cannot open file %s \n", strerror(errno), errno, SensorPath);
+		sprintf(InfoText, "ERROR: %s %d Cannot open file %s \n", strerror(errno), errno, Address);
 		CHECK(FALSE, InfoText);
 		// fclose(fp); Don't close, fp == NULL!!
 		return Status;

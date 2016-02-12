@@ -56,6 +56,7 @@
 void * RdKeyboardKnob(enum ProcTypes_e ProcType);
 void * RdButton(enum ProcTypes_e ProcType);
 void * RdKeyboard(enum ProcTypes_e ProcType);
+void * RdLCDButtons(enum ProcTypes_e ProcType);
 void * OneWireHandler(enum ProcTypes_e ProcType);
 void * TimeoutHandler(enum ProcTypes_e ProcType);
 void * Watchdog(enum ProcTypes_e ProcType);
@@ -126,6 +127,7 @@ int    main(int argc, char *argv[]) {
   ProcState.BatVoltF       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
   ProcState.BatAmpS        = SENS_DEF_VAL;
   ProcState.BatAmpF        = SENS_DEF_VAL;
+  ProcState.LCD_Id         = 0;
   ProcState.fd.lcd         = 0;
   ProcState.fd.own         = 0;
   ProcState.fd.ToOwn       = 0;
@@ -1004,12 +1006,12 @@ void   InitProc(struct ProcState_s *PState) {
   ret= pthread_create( &PState->Thread.Timeout,  NULL, (void *) TimeoutHandler,  (void *) ProcessorType);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Timout thread", strerror(errno)); 
   errno = 0;
+ // Not used as LCD buttons works well 20160212 
+ // ret = pthread_create( &PState->Thread.Button,      NULL, (void *) RdButton, (void *) ProcessorType);
+ // if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Button thread", strerror(errno)); 
+ // errno = 0;
   
-  ret = pthread_create( &PState->Thread.Button,      NULL, (void *) RdButton, (void *) ProcessorType);
-  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Button thread", strerror(errno)); 
-  errno = 0;
-  
-   ret = pthread_create( &PState->Thread.Kbd,      NULL, (void *) RdKeyboard, (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.Kbd,      NULL, (void *) RdKeyboard, (void *) ProcessorType);
   if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Kbd thread", strerror(errno)); 
   errno = 0;
 
@@ -1025,6 +1027,11 @@ void   InitProc(struct ProcState_s *PState) {
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Socket server", strerror(errno)); 
   errno = 0;
 
+  ret = pthread_create( &PState->Thread.LCDKbd,      NULL, (void *) RdLCDButtons, (void *) ProcessorType);
+  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "LCD Buttons thread", strerror(errno)); 
+  errno = 0;
+
+  
   //sleep(2); // Wait until all threads are ready, i.e have opened all resources
   
   OPEN_PIPE(PState->fd.timo, TIMO_PIPE, O_WRONLY);

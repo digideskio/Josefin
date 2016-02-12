@@ -119,8 +119,6 @@ char DebugOn;  // Global variable, may be used by everyone
 
 struct ProcState_s  ProcState; // Write only Main.c, read all
 
-pthread_mutex_t   *MutexFlag;
-
 #define DBGON DebugOn = TRUE;
 #define DBGOFF DebugOn = FALSE;
 

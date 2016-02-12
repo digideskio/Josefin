@@ -58,6 +58,7 @@ struct ExpOneWireList_s {
 	 int  						Data;  // Normally not used but for AD for ex you can select Conversion factor
 };
 
+
  static const struct ExpOneWireList_s ExpOneWireList[] = {
       /************************************************************/
       // Expected devices, if found here the defined name is used
@@ -135,6 +136,9 @@ struct ExpOneWireList_s {
 		
 #define EXP_NO_OF_DEVICES ((sizeof(ExpOneWireList)/sizeof(ExpOneWireList[0])))
 #define MAX_NO_OF_DEVICES 25  // Defines maximum Id no!!
+
+// Global varaiable
+ struct 	OneWireList_s OneWireList[MAX_NO_OF_DEVICES]; // Maximum no of allowed devices on 1-wire net!
 
 
 // external functions defined in crcutil.c
