@@ -31,8 +31,8 @@
 #include <curl/curl.h>
 
 #ifdef RPI_DEFINED
-#include <wiringPi.h>
-#include <wiringSerial.h>
+//#include <wiringPi.h>
+//#include <wiringSerial.h>
 #include "lcd_def.h" 
 #include <lcd.h>
 #elif BB_DEFINED
@@ -154,7 +154,7 @@ int    main(int argc, char *argv[]) {
 		FQueue[Idx].ADBatVoltF 	= SENS_DEF_VAL;
 	} 
   
-  wiringPiSetup ();
+ // wiringPiSetup ();
 /*
 	#ifdef RPI_DEFINED
 	if (wiringPiSetup () == -1)  // Initiate WiringPi lib
@@ -1001,7 +1001,9 @@ void   InitProc(struct ProcState_s *PState) {
   mknod(TIMO_PIPE, S_IFIFO|0666, 0); 
 
   OPEN_PIPE(PState->fd.own, MAIN_PIPE, O_RDONLY|O_NONBLOCK);
-  OPEN_PIPE(PState->fd.ToOwn, MAIN_PIPE, O_WRONLY);
+  OPEN_PIPE(PState->fd.ToOwn, MAIN_PIPE, O_WRONLY
+  
+  // Define which processes to use, several options! You need to include correct file also!
 
   ret= pthread_create( &PState->Thread.Timeout,  NULL, (void *) TimeoutHandler,  (void *) ProcessorType);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Timout thread", strerror(errno)); 

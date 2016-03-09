@@ -130,7 +130,8 @@ struct ExpOneWireList_s {
 
 			{8, "LCD-1 ", 0xFF,  "420001000007EBFF", 0},// Inne LCD-1 HA7S format
       {8, "LCD-1 ", 0xFF,  "FF.EB0700000100", 0}, // Inne LCD-1 BIG OWFS format			  	
-      {8, "LCD-1 ", 0xFF,  "FF.750800000100", 0}  // Inne LCD-2 BIG OWFS format
+      {8, "LCD-1 ", 0xFF,  "FF.750800000100", 0},  // Inne LCD-2 BIG OWFS format
+      {8, "LCD-1 ", 0xFF,  "FF.0A0900000100", 0}  // Inne LCD-3 BIG OWFS format
 
     };
 		

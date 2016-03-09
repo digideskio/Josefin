@@ -352,8 +352,8 @@ char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, ch
   for (idx = 0; idx < 4; idx++)
     AD[idx] = SENS_DEF_VAL;
   // We should use uncached here to get fastest possible response!
-  sprintf(Address, "%s%s%s%s", OWFS_MP, "uncached/", SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
-   //sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+  //sprintf(Address, "%s%s%s%s", OWFS_MP, "uncached/", SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+   sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
 
  // printf ("AD Fact: %3.2f %s\r\n", ConvLevelAD, SensorPath);
 	

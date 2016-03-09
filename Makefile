@@ -2,9 +2,9 @@
 # Modified to also include BeagleBone, Aachen 20140214
   
 EXEC = Josefin
-OBJS-RPI = Main.c KeyboardBut.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
-OBJS-BB = SimpleGPIO.c Main.c KeyboardBut.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
-OBJS-HOST = SimpleGPIO.c Main.c KeyboardBut.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
+OBJS-RPI = Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
+OBJS-BB = SimpleGPIO.c Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
+OBJS-HOST = SimpleGPIO.c Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
 #OBJS = Main.o KeyboardBut.o OneWireHandlerHA7S.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.c
 LDLIBS += -lpthread # Support library for pthreads
 LDLIBS += -lcurl # Support library for curl
@@ -44,7 +44,7 @@ CFLAGS-HOST += -DOWLCD_PRESENT
 # Additional options to compiler
 CFLAGS-RPI += -I$(WIRINGPILIB)
 
-LDLIBS-RPI += -lwiringPi
+#LDLIBS-RPI += -lwiringPi
 LDLIBS-RPI += -lcurl
 LDLIBS-RPI += -lpthread # Support library for pthreads
 #$(EXEC): $(OBJS)

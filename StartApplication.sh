@@ -35,8 +35,7 @@ CPUType=1
 		
     echo "Starting Josefin script"
     # run application you want to start
-     /home/pi/Josefin/Josefin&
-#		> /home/pi/logfile.txt 2>&1
+     /home/pi/Josefin/Josefin&  #	> /home/pi/logJosefin.txt 2>&1
     echo "Start Byteport reporting"
     python /home/pi/Josefin/ByteportReport.py&
 

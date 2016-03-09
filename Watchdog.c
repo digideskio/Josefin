@@ -18,7 +18,7 @@
 #include <string.h>
 #include <malloc.h>
 #ifdef RPI_DEFINED
-#include <wiringPi.h>
+// #include <wiringPi.h>  Not used any more AG March 2016
 #define OK_LED  47
 #endif
 
