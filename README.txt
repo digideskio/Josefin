@@ -4,6 +4,9 @@ Sätt chown -R root *
 
 Sätta upp ny image/distribution
 apt-get owfs
+https://wiki.m.nu/index.php/OWFS_p%C3%A5_Rasperry_Pi#Se_till_s.C3.A5_att_OWFS_startar_automatiskt_vid_boot
+Install [RPI/BB]start1wire in /etc/init.d and do update-rc.d...
+
 apt-get tightvncserver
 apt-get samba
 
@@ -48,4 +51,13 @@ Ladda in curl paketet
 		
 		Felsökning mm
 		start etch0: dhclient eth0
+    
+ Addera support för Byteport libbyteport
+Lägg in i .bashrc
+
+# AG 20161204 Add Env for mqtt (Axel Alatalo)
+export PKG_CONFIG_PATH=/home/pi/Josefin/libbyteport/staging/lib/pkg-config
+pkg-config --cflags --libs byteport   
+ 
+    
 		

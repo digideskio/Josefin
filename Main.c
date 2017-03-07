@@ -3,12 +3,15 @@
  *
  *      Ver  	Date    	Name Description
  *        		20061124 	AGY  Created.
- *      			20130219 	AGY  New version for RaspberryPi. Slight mod needed! 
- *      			20140214 	AGY  New version adding BeagleBone support 
- * 			W			20150212  AGY  Added Byteport support (Curl function to report to Byteport cloud, from iGW)
+ *      	    20130219 	AGY  New version for RaspberryPi. Slight mod needed! 
+ *      	    20140214 	AGY  New version adding BeagleBone support 
+ * 				    20150212    AGY  Added Byteport support (Curl function to report to Byteport cloud, from iGW)
+ * 				    20160725    AGY  Added processor running indication on the LCD, done at Småskär!
+ *       W    201612      AGY  New interface to Byteport, now including comands from byteport to Applicatiom
  *
  *************************************************************************/
 #include <sys/ioctl.h>
+#include <execinfo.h>
 #include <linux/ioctl.h>
 #include <getopt.h>
 #include <signal.h>
@@ -53,14 +56,15 @@
 #define	Line3  40
 #define Line4  60 
 
-void * RdKeyboardKnob(enum ProcTypes_e ProcType);
-void * RdButton(enum ProcTypes_e ProcType);
-void * RdKeyboard(enum ProcTypes_e ProcType);
-void * RdLCDButtons(enum ProcTypes_e ProcType);
-void * OneWireHandler(enum ProcTypes_e ProcType);
-void * TimeoutHandler(enum ProcTypes_e ProcType);
-void * Watchdog(enum ProcTypes_e ProcType);
-void * SockServer(enum ProcTypes_e ProcType);
+void * BPHandler(struct ProcState_s PState);
+void * RdKeyboardKnob(struct ProcState_s PState);
+void * RdButton(struct ProcState_s PState);
+void * RdKeyboard(struct ProcState_s PState);
+void * RdLCDButtons(struct ProcState_s PState);
+void * OneWireHandler(struct ProcState_s PState);
+void * TimeoutHandler(struct ProcState_s PState);
+void * Watchdog(struct ProcState_s PState);
+void * SockServer(struct ProcState_s PState);
 void   LCDDisplayUpdate(struct ProcState_s *PState);
 float  GetWaterLevel(float Level);
 float  GetDieselLevel(float Level);
@@ -70,6 +74,7 @@ void   OpButPressed(struct ProcState_s *PState);
 void   RghtButPressed(struct ProcState_s *PState);
 void   LftButPressed(struct ProcState_s *PState);
 void   BuildBarText(char *Str, float Level, float Resolution);
+void   SignalCallbackHandler(int signum);
 void   QuitProc(void);
  
 // Define global variables
@@ -90,7 +95,7 @@ struct  FQ_s  { // used to make a smoother presentation
 	float     ADDiesel;
 	float     ADBatVoltF;
 } FQueue[NO_OF_ELEM_IN_FILTERQUEU] ;
-
+  char                  ProcRunning = '*'; 
 
 int    main(int argc, char *argv[]) {
 	union SIGNAL			 		*Msg;
@@ -99,8 +104,16 @@ int    main(int argc, char *argv[]) {
   unsigned char       	UpdateInterval, Idx;
 	enum ProcTypes_e    	ProcessorType;
 	char									ByteportText[100];
-
+  int                   fd_Own, fd_ToOwn, fd_Timo, fd_BytePRep, fd_Sens;
  
+ // First thing to do! Register signal and signal handler for (error) signals from operating system
+  signal(SIGINT, SignalCallbackHandler);  // Ctrl -c catched
+  signal(SIGSEGV, SignalCallbackHandler); // Segmentation fault catched
+  signal(SIGILL, SignalCallbackHandler);  // Illegal instruction catched
+  signal(SIGBUS, SignalCallbackHandler);  // Bus error catched 
+  signal(SIGSTKFLT, SignalCallbackHandler); // Stack fault catched 
+  signal(SIGXFSZ, SignalCallbackHandler);  // File size exceeded ctached 
+  
 	//DebugOn = TRUE;   // Start in Debug mode
 //ProcState.ModeState      = Water;          // Set initial value, for test purpose. TBD later
   ProcState.ModeState      = MainMode;          // Set initial value, for test purpose. TBD later 
@@ -121,7 +134,7 @@ int    main(int argc, char *argv[]) {
   ProcState.MaxWaterTemp   = SENS_DEF_VAL;
   ProcState.WaterTemp      = SENS_DEF_VAL;
   ProcState.WaterLevel     = SENS_DEF_VAL;
-	ProcState.HWTemp         = SENS_DEF_VAL;
+  ProcState.HWTemp         = SENS_DEF_VAL;
   ProcState.DieselLevel    = SENS_DEF_VAL;
   ProcState.BatVoltS       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
   ProcState.BatVoltF       = 13.5; //SENS_DEF_VAL; Start value, avoids div by 0!
@@ -129,12 +142,19 @@ int    main(int argc, char *argv[]) {
   ProcState.BatAmpF        = SENS_DEF_VAL;
   ProcState.LCD_Id         = 0;
   ProcState.fd.lcd         = 0;
-  ProcState.fd.own         = 0;
-  ProcState.fd.ToOwn       = 0;
-  ProcState.fd.timo        = 0;
-  ProcState.fd.sens        = 0;
-  ProcState.fd.kbdBut      = 0;
-  ProcState.fd.kbdKnob     = 0;
+  ProcState.fd.RD_MainPipe = 0;
+  ProcState.fd.WR_MainPipe = 0;
+  ProcState.fd.RD_TimoPipe = 0;
+  ProcState.fd.WR_TimoPipe = 0;
+  ProcState.fd.WR_OWPipe    = 0;
+  ProcState.fd.RD_OWPipe    = 0;
+
+  ProcState.fd.WR_kbdButPipe  = 0;
+  ProcState.fd.RD_kbdButPipe  = 0;
+  ProcState.fd.WR_kbdKnobPipe = 0;
+  ProcState.fd.RD_kbdKnobPipe = 0;
+  ProcState.fd.RD_BPRepPipe   = 0;
+  ProcState.fd.WR_BPRepPipe = 0;  
 	ProcState.fd.OutTemp     = 0;
 	ProcState.fd.BoxTemp     = 0;
 	ProcState.fd.DieselLevel = 0;
@@ -142,169 +162,159 @@ int    main(int argc, char *argv[]) {
 	ProcState.fd.RefrigTemp  = 0;
 	ProcState.DevLCDDefined  = FALSE;
   ProcState.UpdateInterval = 12;   // Timeout intervall for data & display update  
-	ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off   
+  ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off   
 	
 
-	// Check if 1wire master ID present, set name accordingly.
-  strncpy(ProcState.DeviceName, "JosefinSim" , 16);
+	// Check if 1wire master ID present, set name accordingly. For now use default
+  sprintf(ProcState.DeviceName,"%s", "JosefinSim");
 // Initiate filter queue
 	for (Idx = 0; Idx < NO_OF_ELEM_IN_FILTERQUEU; Idx++) {
 		FQueue[Idx].ADDiesel		= SENS_DEF_VAL;
 		FQueue[Idx].ADWater 		= SENS_DEF_VAL;
 		FQueue[Idx].ADBatVoltF 	= SENS_DEF_VAL;
 	} 
+  memset(LCDText, ' ', 100); // Clear display buffer
+  InitProc(&ProcState); //LOG_MSG("All processes initiated\r\n");sleep(0); 
   
- // wiringPiSetup ();
-/*
-	#ifdef RPI_DEFINED
-	if (wiringPiSetup () == -1)  // Initiate WiringPi lib
-    exit (1) ;  
-	ProcState.fd.lcd = lcdInit (4, 20, 4, 11, 10, 0,1,2,3,0,0,0,0) ; // Initiate LCD driver
-	// Note, HW wiring must correspond to this...
-#elif BB_DEFINED
+  fd_ToOwn    = ProcState.fd.WR_MainPipe;
+  fd_Own      = ProcState.fd.RD_MainPipe;
+  fd_BytePRep = ProcState.fd.WR_BPRepPipe;
+  fd_Timo     = ProcState.fd.WR_TimoPipe;  
+  fd_Sens     = ProcState.fd.WR_OWPipe;
+  
+ 	sprintf(&LCDText[0], " %s started   Ver: %s                       Golding production ", ProcState.DeviceName, __DATE__ );
 
-//ProcState.fd.lcd = lcdInit (4, 20, 4, P8_3, P8_4, P8_5, P8_11, P8_12, P8_14,P8_12,0,0,0) ; // Initiate LCD driver
-
-//P8_14 ==> DB7
-//P8_12 ==> DB6
-//P8_11 ==> DB5
-//P8_5  ==> DB4 
-//P8_4  ==> RS
-//P8_3  ==> E
-
-#endif	
-*/	
-
-   memset(LCDText, ' ', 100); // Clear display buffer
-/*
-	 #ifdef RPI_DEFINED
-	//  LCD_CTRL(ProcState.fd.lcd, LCD_Reset);
-//    LCD_CLEAR(ProcState.fd.lcd);
-//    LCD_HOME(ProcState.fd.lcd);	
-//	LCD_CTRL(ProcState.fd.lcd, LCD_On); 
-//	LCD_CTRL(ProcState.fd.lcd, LCD_Cursor_On);
-
-
-#endif  
-*/
-  InitProc(&ProcState); sleep(2);
- // signal(SIGINT, QuitProc);  // Handles CTRL-C command
-
-// Note: Line 2 & 3 must be swapped..!
-  //sprintf(&LCDText[0], "%s started    ", ProcState.DeviceName);
-  //sprintf(&LCDText[40],"  Ver: %s          ", __DATE__);
-  //sprintf(&LCDText[20],"                    ");
-  //sprintf(&LCDText[60]," Golding production ");
-	
-	sprintf(&LCDText[0], " %s started   Ver: %s                       Golding production ", ProcState.DeviceName, __DATE__ );
- // LCD_WRITE(ProcState.fd.lcd, 1, 1, LCDText);
-
-/*
- #ifdef LCD_DEFINED	
-	lcdPosition (ProcState.fd.lcd, 0, 0) ;
-	for (Idx = 0; Idx < 80; Idx++)
-	  lcdPutchar(ProcState.fd.lcd, LCDText[Idx]);		
-	//lcdPrintf(ProcState.fd.lcd, LCDText);
- 
-	//ret = write(ProcState.fd.lcd, LCDText, 80);
-	// printf("LCD Write: %d bytes\r\n", ret);
-#endif
-*/
-if (ProcState.fd.lcd >= 0) {  // If LCD attached
+ // Now we must wait for the LCD to be initiated...
+  int idx = 0;
+  while (!ProcState.DevLCDDefined) {
+    usleep(200000);
+//    LOG_MSG(".");
+    idx++;
+    if (idx >= 1000) {
+      LOG_MSG("Err: Not able to start, no LCD found..exit! \r\n"); 
+      exit(0);
+    }  
+  }
+  
+  if (ProcState.DevLCDDefined) {  // If LCD attached
 	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
 	LCD1W_WRITE(LCD1, 3, &LCDText[Line2]);
 	LCD1W_WRITE(LCD1, 2, &LCDText[Line3]);
 	LCD1W_WRITE(LCD1, 4, &LCDText[Line4]);	
+} else { // report error
+  sprintf(InfoText, "Err: LCD not initated fd = %d \n", ProcState.fd.lcd);
+  LOG_MSG(InfoText); 
 }
 	
-  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
-	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 
-  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTRefrig", SIGInitMeasTempRefrig, 3 Sec); 
-  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTWater", SIGInitMeasTempWater, 15 Sec);
-	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTHWater", SIGInitMeasTempHW, 15 Sec);
-	REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTSea", SIGInitMeasTempSea, 20 Sec); 
- // REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADInt", SIGInitMeasADInt, 2 Sec); 
-  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExt", SIGInitMeasADExt, 10 Sec); 
-  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitBlkOn", SIGMinuteTick, 60 Sec); 
-		sprintf(InfoText, "%s started Ver:  %s\n", ProcState.DeviceName, __DATE__);
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitTOut", SIGInitMeasTempOut, 3 Sec);  
+	REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitTBox", SIGInitMeasTempBox, 8 Sec); 
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitTRefrig", SIGInitMeasTempRefrig, 3 Sec); 
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitTWater", SIGInitMeasTempWater, 15 Sec);
+	REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitTHWater", SIGInitMeasTempHW, 15 Sec);
+	REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitTSea", SIGInitMeasTempSea, 20 Sec); 
+ // REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitADInt", SIGInitMeasADInt, 2 Sec); 
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitADExt", SIGInitMeasADExt, 10 Sec); 
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitBlkOn", SIGMinuteTick, 60 Sec); 
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainInitLCDBlink", SIGSecondTick, 1 Sec); 
+  REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainSend BPReport", SIGInitByteportReport, 10 Sec); 
+
+	Msg = (void *) Buf;
+  if (fd_BytePRep != 0) {
+    Msg->SigNo = SIGByteportInit;
+	  sprintf(Msg->ByteportReport.Str, ProcState.DeviceName);			
+    SEND(fd_BytePRep, Msg, sizeof(union SIGNAL));
+  } else 
+    LOG_MSG ("Error: No Byteport handler defined \r\n");
+  
+	sprintf(InfoText, "%s started Ver:  %s\n", ProcState.DeviceName, __DATE__);
   LOG_MSG(InfoText);
   while (TRUE) {
-    WAIT(ProcState.fd.own, Buf, sizeof(union SIGNAL));
+    WAIT(fd_Own, Buf, sizeof(union SIGNAL));
 //if (Msg->SigNo == 10) {DbgTest = 1;}
 		fflush(stdout);  // Flush stdout, used if we print to file
 		Msg = (void *) Buf;
- if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
+    if (DbgTest == 1) {printf("2: %d\r\n", Msg->SigNo);usleep(200000);}
  
    switch(Msg->SigNo) {
-      case SIGMinuteTick:  // Wait until backlight should be turned off
-  			REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
+	   case SIGSecondTick:
+		   LCDDisplayUpdate(&ProcState);
+		   REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainLCDBlink", SIGSecondTick, 1 Sec); 
+	   break;	
+     case SIGMinuteTick:  // Wait until backlight should be turned off
+  		 REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MinuteTick", SIGMinuteTick, 60 Sec); 
 		 // printf("Tick: %d\r\n", ProcState.LCDBlkOnTimer);
-				if (ProcState.fd.lcd >= 0) {  // First check that we have a LCD attached
+			 if (ProcState.fd.lcd >= 0) {  // First check that we have a LCD attached
 					if (ProcState.LCDBlkOnTimer <= 0) 
 						Set1WLCDBlkOff(LCD1);  // Turn off backlight on display
 					else
 						ProcState.LCDBlkOnTimer--;	
 				}
       break;
+      case SIGInitByteportReport:  // Select below which values to report to Byteport, and how often!      	
+        Msg->SigNo = SIGByteportReport;
+        sprintf(Msg->ByteportReport.Str, "OutTemp=%-.1f;BoxTemp=%-.1f;RefrigTemp=%-.1f;WaterTemp=%-.1f;WaterLevel=%-.1f;DieselLevel=%-.1f;BatVoltF=%-.1f", ProcState.OutTemp, ProcState.BoxTemp,ProcState.RefrigTemp,ProcState.WaterLevel, ProcState.DieselLevel, ProcState.BatVoltF);			
+				//sprintf(Msg->ByteportReport.Str, "OutTemp=%-.1f;BoxTemp=%-.1f;RefrigTemp=%-.1f;WaterTemp=%-.1f;HWaterTemp=%-.1f;SeaTemp=%-.1f;WaterLevel=%-.1f;DieselLevel=%-.1f;BatVoltF=%-.1f", ProcState.OutTemp, ProcState.BoxTemp,ProcState.RefrigTemp, ProcState.WaterTemp, ProcState.HWaterTemp, ProcState.SeaTemp, ProcState.WaterLevel, ProcState.DieselLevel, ProcState.BatVoltF);			
+        if (DebugOn == 1) { printf(" %s \r\n", Msg->ByteportReport.Str); }  
+        SEND(fd_BytePRep, Msg, sizeof(union SIGNAL));		
+        REQ_TIMEOUT(fd_Timo, fd_ToOwn, "MainSend BPReport", SIGInitByteportReport, 60 Sec); // Time between each report to Byteport
+      break;
 			case SIGInitMeasTempBox:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = BOX_TEMP;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break;
       case SIGInitMeasTempRefrig:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = REFRIG_TEMP;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break;
       case SIGInitMeasTempWater:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = WATER_TEMP;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break;
       case SIGInitMeasTempSea:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = SEA_TEMP;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break; 
       case SIGInitMeasTempHW:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = HWATER_TEMP;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break; 
       case SIGInitMeasTempOut:  // Initiate loop to read Temperature sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = OUT_TEMP;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break;
 			case SIGInitMeasADInt:  // Initiate loop to read AD sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = ADINT;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break;
 			case SIGInitMeasADExt:  // Initiate loop to read AD sensors
         Msg->SigNo = SIGReadSensorReq;
-        Msg->SensorReq.Client_fd = ProcState.fd.ToOwn;
+        Msg->SensorReq.Client_fd = fd_ToOwn;
         Msg->SensorReq.Sensor = ADEXT;
-        SEND(ProcState.fd.sens, Msg, sizeof(union SIGNAL));
+        SEND(fd_Sens, Msg, sizeof(union SIGNAL));
       break;
 
       case SIGReadSensorResp:
-
 			  if (DbgTest == 1) {		
 					printf(" SenRsp %d: %10.5f sec V1: %f V2: %f  Status: %s \r\n", 
 								 Msg->SensorResp.Sensor, Msg->SensorResp.CmdTime,
 								 Msg->SensorResp.Val[0], Msg->SensorResp.Val[1],
 								 Msg->SensorResp.Status ? "OK" : "ERROR");
 				}
-        switch (Msg->SensorResp.Sensor) {
-				
+        switch (Msg->SensorResp.Sensor) {				
 					case OUT_TEMP: 
 						ProcState.OutTemp = Msg->SensorResp.Val[0];
 						if (Msg->SensorResp.Status) { // Valid data recieved
@@ -313,14 +323,8 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						  if ((ProcState.MaxOutTemp == SENS_DEF_VAL) || (ProcState.OutTemp > ProcState.MaxOutTemp))
 							  ProcState.MaxOutTemp   = Msg->SensorResp.Val[0];
 						} // No valid data
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTOut", SIGInitMeasTempOut, 30 Sec);
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitTOut", SIGInitMeasTempOut, 30 Sec);
             LCDDisplayUpdate(&ProcState);
-						// Write to file for Byteport reporting. create file if not opened yet
-						//if(ProcState.fd.OutTemp == 0)  // No file descriptor defined
-						ProcState.fd.OutTemp = fopen("/tmp/ByteportReports/OutTemp", "w+");	
-						sprintf(ByteportText, "%-.1f", ProcState.OutTemp);
-						fprintf(ProcState.fd.OutTemp, ByteportText);
-						fclose(ProcState.fd.OutTemp);
 
 					break;
 					case BOX_TEMP: 
@@ -331,14 +335,9 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						  if ((ProcState.MaxBoxTemp == SENS_DEF_VAL) || (ProcState.BoxTemp > ProcState.MaxBoxTemp))
 							  ProcState.MaxBoxTemp   = Msg->SensorResp.Val[0];
 						}
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTBox", SIGInitMeasTempBox, 15 Sec);
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitTBox", SIGInitMeasTempBox, 15 Sec);
             LCDDisplayUpdate(&ProcState);
-						// Write to file for Byteport reporting. create file if not opened yet
-						//if (ProcState.fd.BoxTemp == 0)  // No file descriptor defined
-						ProcState.fd.BoxTemp = fopen("/tmp/ByteportReports/BoxTemp", "w+");	
-						sprintf(ByteportText, "%-.1f", ProcState.BoxTemp);
-						fprintf(ProcState.fd.BoxTemp, ByteportText);
-						fclose(ProcState.fd.BoxTemp);				
+
 					break;
 					case REFRIG_TEMP:
 						ProcState.RefrigTemp = Msg->SensorResp.Val[0]; 
@@ -348,14 +347,9 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						  if ((ProcState.MaxRefrigTemp == SENS_DEF_VAL) || (ProcState.RefrigTemp > ProcState.MaxRefrigTemp))
 							  ProcState.MaxRefrigTemp   = Msg->SensorResp.Val[0];
 						}
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTRefrig", SIGInitMeasTempRefrig, 20 Sec);
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitTRefrig", SIGInitMeasTempRefrig, 20 Sec);
             LCDDisplayUpdate(&ProcState);
-						// Write to file for Byteport reporting. create file if not opened yet
-						//if (ProcState.fd.RefrigTemp == 0)  // No file descriptor defined
-						ProcState.fd.RefrigTemp = fopen("/tmp/ByteportReports/RefrigTemp", "w+");								
-						sprintf(ByteportText, "%-.1f", ProcState.RefrigTemp);
-						fprintf(ProcState.fd.RefrigTemp, ByteportText);
-						fclose(ProcState.fd.RefrigTemp);
+
 					break;
           case WATER_TEMP: 
             ProcState.WaterTemp = Msg->SensorResp.Val[0];
@@ -365,14 +359,9 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
               if ((ProcState.MaxWaterTemp == SENS_DEF_VAL) || (ProcState.WaterTemp > ProcState.MaxWaterTemp))
                 ProcState.MaxWaterTemp   = Msg->SensorResp.Val[0];
             }
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTWater", SIGInitMeasTempWater, 20 Sec);
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitTWater", SIGInitMeasTempWater, 20 Sec);
             LCDDisplayUpdate(&ProcState);
-						// Write to file for Byteport reporting. create file if not opened yet
-						//if (ProcState.fd.WaterTemp == 0)  // No file descriptor defined
-						ProcState.fd.WaterTemp = fopen("/tmp/ByteportReports/WaterTemp", "w+");						
-						sprintf(ByteportText, "%-.1f", ProcState.WaterTemp);
-						fprintf(ProcState.fd.WaterTemp, ByteportText);
-						fclose(ProcState.fd.WaterTemp);
+				
 					break;	
           case HWATER_TEMP: 
             ProcState.HWTemp = Msg->SensorResp.Val[0];
@@ -382,15 +371,9 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
               if ((ProcState.MaxHWTemp == SENS_DEF_VAL) || (ProcState.HWTemp > ProcState.MaxHWTemp))
                 ProcState.MaxHWTemp   = Msg->SensorResp.Val[0];
             }
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitHW", SIGInitMeasTempHW, 20 Sec);
-
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitHW", SIGInitMeasTempHW, 20 Sec);
             LCDDisplayUpdate(&ProcState);
-						// Write to file for Byteport reporting. create file if not opened yet
-						//if (ProcState.fd.HWaterTemp == 0)  // No file descriptor defined
-						ProcState.fd.HWaterTemp = fopen("/tmp/ByteportReports/HWaterTemp", "w+");		
-						sprintf(ByteportText, "%-.1f", ProcState.HWaterTemp);
-						fprintf(ProcState.fd.HWaterTemp, ByteportText);
-						fclose(ProcState.fd.HWaterTemp);
+
 					break;
 					case SEA_TEMP:    
   					ProcState.SeaTemp= Msg->SensorResp.Val[0];
@@ -400,15 +383,9 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 						  if ((ProcState.MaxSeaTemp == SENS_DEF_VAL) || (ProcState.SeaTemp > ProcState.MaxSeaTemp))
 							  ProcState.MaxSeaTemp   = Msg->SensorResp.Val[0];
 						} 
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitTSea", SIGInitMeasTempSea, 40 Sec);
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitTSea", SIGInitMeasTempSea, 40 Sec);
             LCDDisplayUpdate(&ProcState);
 						
-						// Write to file for Byteport reporting. create file if not opened yet
-						//if (ProcState.fd.SeaTemp == 0)  // No file descriptor defined
-						ProcState.fd.SeaTemp = fopen("/tmp/ByteportReports/SeaTemp", "w+");								
-						sprintf(ByteportText, "%-.1f", ProcState.SeaTemp);
-						fprintf(ProcState.fd.SeaTemp, ByteportText);
-						fclose(ProcState.fd.SeaTemp);
 					break;
 					case ADINT:    
 /*						if (Msg->SensorResp.Status) { // Valid data recieved
@@ -416,7 +393,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 //sprintf(InfoText, "BatF %f AD %6.3f\n", ProcState.BatVoltF, Msg->SensorResp.Val[0]);
 //LOG_MSG(InfoText);
 					  }		
-					  REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADInt", SIGInitMeasADInt, 5 Sec);
+					  REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitADInt", SIGInitMeasADInt, 5 Sec);
 //          TIMER_START(TM1AD);
             LCDDisplayUpdate(&ProcState); 
 */				break;
@@ -467,7 +444,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 								
 									
 							// Compensate for battery voltage 
-							ProcState.ADWaterLevel = ProcState.ADWaterLevel * 13 / ProcState.BatVoltF; 
+							ProcState.ADWaterLevel  = ProcState.ADWaterLevel * 13 / ProcState.BatVoltF; 
 							ProcState.ADDieselLevel = ProcState.ADDieselLevel * 13 / ProcState.BatVoltF;
 					    if (DebugOn) // Print adjusted AD reading
 								printf(">>>>Converted AD reading[BF %4.2f DL: %4.2f WL: %4.2f BS: %4.2f]\r\n", ProcState.BatVoltF, Msg->SensorResp.Val[0], Msg->SensorResp.Val[1], Msg->SensorResp.Val[2]);									
@@ -477,31 +454,22 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 							ProcState.WaterLevel   =  GetWaterLevel(ProcState.ADWaterLevel);
 							ProcState.DieselLevel  =  GetDieselLevel(ProcState.ADDieselLevel);
 						}   
-						if ((ProcState.ModeState == Water) || (ProcState.ModeState == Diesel) ) { // Fast update
-					     REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExtFst", SIGInitMeasADExt, 1 Sec);
+						if ((ProcState.ModeState == Water) || (ProcState.ModeState == Diesel) ) { // Fast update. Always send to Byteport at same pace!
+  						Msg->SigNo = SIGByteportReport;
+              sprintf(Msg->ByteportReport.Str, "WaterLevel=%-.1f", ProcState.WaterLevel);			
+              if (DebugOn == 1) { LOG_MSG(Msg->ByteportReport.Str); }  
+              SEND(fd_BytePRep, Msg, sizeof(union SIGNAL));
+ 
+					     REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitADExtFst", SIGInitMeasADExt, 1 Sec);
 							// if (DebugOn) printf("Fast update M:%d \r\n",ProcState.ModeState);
 						} else { // Slow update
-					     REQ_TIMEOUT(ProcState.fd.timo, ProcState.fd.ToOwn, "MainInitADExtSlw", SIGInitMeasADExt, 12 Sec);
+					     REQ_TIMEOUT(fd_Timo, ProcState.fd.WR_MainPipe, "MainInitADExtSlw", SIGInitMeasADExt, 12 Sec);
 							// if (DebugOn) printf("Slow update M:%d \r\n",ProcState.ModeState );
 					  }
 //sprintf(InfoText, "BatF  %7.3f AD: %7.3f \n", ProcState.BatVoltS, Msg->SensorResp.Val[3]);
 //LOG_MSG(InfoText);
 						// Write to file for Byteport reporting. create file if not opened yet
 						//if (ProcState.fd.WaterLevel == 0)  // No file descriptor defined
-						ProcState.fd.WaterLevel = fopen("/tmp/ByteportReports/WaterLevel", "w+");	
-						sprintf(ByteportText, "%-.1f", ProcState.WaterLevel);
-						fprintf(ProcState.fd.WaterLevel, ByteportText);
-						fclose(ProcState.fd.WaterLevel);
-            
-						ProcState.fd.DieselLevel = fopen("/tmp/ByteportReports/DieselLevel", "w+");	
-						sprintf(ByteportText, "%-.1f", ProcState.DieselLevel);
-						fprintf(ProcState.fd.DieselLevel, ByteportText);
-						fclose(ProcState.fd.DieselLevel);	
-            
-						ProcState.fd.BatVoltF = fopen("/tmp/ByteportReports/BatVoltF", "w+");	
-						sprintf(ByteportText, "%-.1f", ProcState.BatVoltF);
-						fprintf(ProcState.fd.BatVoltF, ByteportText);
-						fclose(ProcState.fd.BatVoltF);				
 						
             LCDDisplayUpdate(&ProcState);
 					break; // ADExt
@@ -511,6 +479,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 				}
 
        LCDDisplayUpdate(&ProcState);
+/*     // Removed 20161227. Now we use Byteport cmd reporting by Axel!
 			 // Write to file for Byteport reporting. Create file if not opened yet
 			 if (DbgTest == 1) {printf("Enter send to Byteport\r\n");usleep(200000);}
 			 sprintf(FilePath, "/tmp/ByteportReports/BatVoltF");  // Set filename
@@ -544,8 +513,9 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 			  	fprintf(ProcState.fd.WaterLevel, ByteportText);
 			  	fclose(ProcState.fd.WaterLevel);
 				}
-				if (DbgTest == 1) {printf("Leaving send to Byteport\r\n");usleep(200000);}		
- /*       if (Msg->SensorResp.Sensor == WATER_TEMP) {// Just to secure only 1 line when no display present
+        
+				if (DbgTest == 1) {printf("Leaving send to Byteport\r\n");usleep(200000);}		 
+        if (Msg->SensorResp.Sensor == WATER_TEMP) {// Just to secure only 1 line when no display present
           LCDDisplayUpdate(&ProcState);
         }  
 */
@@ -554,7 +524,7 @@ if (ProcState.fd.lcd >= 0) {  // If LCD attached
 
 // Turn on backlight on Display when a button is pushed.
       case SIGOpButOn:
-if  (DbgTest == 1) {printf("3: %d\r\n", Msg->SigNo);usleep(200000);}
+        if  (DbgTest == 1) {printf("3: %d\r\n", Msg->SigNo);usleep(200000);}
 				if (!ProcState.fd.lcd) {  // First check that we have a LCD attached
 					if (ProcState.LCDBlkOnTimer <= 0) { // If Display OFF, Set timer and turn on Display-nothing else
 						ProcState.LCDBlkOnTimer  = LCDBlkOnTimerVal; // Time before turning backlight off
@@ -685,9 +655,9 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
 		case MainMode:          //   "12345678911234567892"
 		  if  (DbgTest == 1) {printf("MainMode \r\n");usleep(200000);}  
       if (PState->OutTemp == SENS_DEF_VAL)
-        sprintf(&LCDText[Line1], "Temperatur     --.-    ");
+        sprintf(&LCDText[Line1], "Temperatur     -.-     ");
       else
-        sprintf(&LCDText[Line1], "Temperatur    %+5.1f   ", PState->OutTemp);
+        sprintf(&LCDText[Line1], "Temperatur    %+5.1f    ", PState->OutTemp);
       if (PState->RefrigTemp == SENS_DEF_VAL)
         sprintf(&LCDText[Line2], " Kyl           --.-    ");
       else
@@ -706,21 +676,21 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
 
     case Temperature:       //   "12345678911234567892"
       if (PState->OutTemp == SENS_DEF_VAL)
-        sprintf(&LCDText[Line1], "Temperatur     --.-      ");
+        sprintf(&LCDText[Line1], "Temperatur    --.-       ");
       else
-        sprintf(&LCDText[Line1], "Temperatur    %+5.1f      ", PState->OutTemp);
+        sprintf(&LCDText[Line1], "Temperatur   %+5.1f       ", PState->OutTemp);
       if (PState->SeaTemp == SENS_DEF_VAL)
-        sprintf(&LCDText[Line2], " Hav           --.-      ");
+        sprintf(&LCDText[Line2], " Hav          --.-     ");
       else        
-        sprintf(&LCDText[Line2], " Hav          %+5.1f   ", PState->SeaTemp);
+        sprintf(&LCDText[Line2], " Hav        %+5.1f     ", PState->SeaTemp);
       if (PState->HWTemp == SENS_DEF_VAL)
-        sprintf(&LCDText[Line3], " Varme         --.-     ");
+        sprintf(&LCDText[Line3], " Varme        --.-     ");
       else
-        sprintf(&LCDText[Line3], " Varme        %+5.1f   ", PState->HWTemp);
+        sprintf(&LCDText[Line3], " Varme       %+5.1f   ", PState->HWTemp);
       if (PState->WaterTemp == SENS_DEF_VAL)
-        sprintf(&LCDText[Line4], " Vatten        --.-    ");
+        sprintf(&LCDText[Line4], " Vatten       --.-    ");
       else        
-        sprintf(&LCDText[Line4], " Vatten       %+5.1f   ", PState->WaterTemp);
+        sprintf(&LCDText[Line4], " Vatten      %+5.1f   ", PState->WaterTemp);
     break;
 
     case MinMaxTemp:        //   "12345678911234567892"
@@ -832,10 +802,17 @@ if  (DbgTest == 1) {printf("DispRoutine entered \r\n");usleep(200000);}
       sprintf(InfoText, "Undefined state %d\n          ", PState);
       CHECK(FALSE, InfoText);
     break;
-
-	
-  }  // End of switch  
-	if  (DbgTest == 1) {printf("DispRoutine entering Write \r\n");usleep(200000);}  
+  }  // End of switch 
+  
+// Show that process is running
+	if (ProcRunning == '*') {
+	  LCDText[19] = '-';
+      ProcRunning = '-'; 
+    } else {
+	  LCDText[19] = '*';
+	  ProcRunning = '*';  
+	}  
+  
 #ifdef OWLCD_PRESENT
 if (PState->DevLCDDefined) {
 	LCD1W_WRITE(LCD1, 1, &LCDText[Line1]);
@@ -969,7 +946,8 @@ void   BuildBarText(char * Str, float Level, float Resolution)    {
 void   InitProc(struct ProcState_s *PState) {
   
   int ret, rc;
-  enum ProcTypes_e    ProcessorType;
+  enum ProcTypes_e    ProcessorType=NONE; // Set default value and then check
+  
 #ifdef BF537_DEFINED
   ProcessorType = BF537;
   LOG_MSG("BF537 defined\n");
@@ -987,71 +965,147 @@ void   InitProc(struct ProcState_s *PState) {
   CHECK(FALSE, InfoText);
 #endif  
 
-
-	 
+  PState->ProcType = ProcessorType;
+  
   remove(KBD_PIPE);
   remove(ONEWIRE_PIPE);	
   remove(MAIN_PIPE);
   remove(TIMO_PIPE);
+  remove(BYTEPHNDL_PIPE);
   umask(0);
   //mknod("tmp/ByteportReports/",  S_IFDIR|0666, 0); 
-	mknod(KBD_PIPE,  S_IFIFO|0666, 0); 
-  mknod(ONEWIRE_PIPE, S_IFIFO|0666, 0); 
-  mknod(MAIN_PIPE, S_IFIFO|0666, 0); 
-  mknod(TIMO_PIPE, S_IFIFO|0666, 0); 
+	ret = mknod(KBD_PIPE,  S_IFIFO|0666, 0);   
+  if (ret < 0) {
+    sprintf(InfoText, "Error: %s, %d, %s \r\n", KBD_PIPE, errno, strerror(errno));
+    LOG_MSG(InfoText);     
+  }
+  ret = mknod(ONEWIRE_PIPE, S_IFIFO|0666, 0); 
+    if (ret < 0) {
+    sprintf(InfoText, "Error: %s, %d, %s \r\n", ONEWIRE_PIPE, errno, strerror(errno));
+    LOG_MSG(InfoText);     
+  }
+  ret = mknod(BYTEPHNDL_PIPE, S_IFIFO|0666, 0); 
+    if (ret < 0) {
+    sprintf(InfoText, "Error: %s, %d, %s \r\n", BYTEPHNDL_PIPE, errno, strerror(errno));
+    LOG_MSG(InfoText);     
+  }
+  ret = mknod(MAIN_PIPE, S_IFIFO|0666, 0);   
+  if (ret < 0) {
+    sprintf(InfoText, "Error: %s, %d, %s \r\n", MAIN_PIPE, errno, strerror(errno));
+    LOG_MSG(InfoText);     
+  }
+  ret = mknod(TIMO_PIPE, S_IFIFO|0666, 0); 
+    if (ret < 0) {
+    sprintf(InfoText, "Error: %s, %d, %s \r\n", TIMO_PIPE, errno, strerror(errno));
+    LOG_MSG(InfoText);     
+  }
+  // Initiate all pipes for communication
+  OPEN_PIPE(PState->fd.RD_BPRepPipe, BYTEPHNDL_PIPE, O_RDONLY|O_NONBLOCK);
+  OPEN_PIPE(PState->fd.WR_BPRepPipe, BYTEPHNDL_PIPE, O_WRONLY);
+  
+  OPEN_PIPE(PState->fd.RD_TimoPipe, TIMO_PIPE, O_RDONLY|O_NONBLOCK);
+  OPEN_PIPE(PState->fd.WR_TimoPipe, TIMO_PIPE, O_WRONLY);
 
-  OPEN_PIPE(PState->fd.own, MAIN_PIPE, O_RDONLY|O_NONBLOCK);
-  OPEN_PIPE(PState->fd.ToOwn, MAIN_PIPE, O_WRONLY
+  OPEN_PIPE(PState->fd.RD_OWPipe, ONEWIRE_PIPE, O_RDONLY|O_NONBLOCK);  
+  OPEN_PIPE(PState->fd.WR_OWPipe, ONEWIRE_PIPE, O_WRONLY);  
+
+  OPEN_PIPE(PState->fd.RD_MainPipe, MAIN_PIPE, O_RDONLY|O_NONBLOCK);
+  OPEN_PIPE(PState->fd.WR_MainPipe, MAIN_PIPE, O_WRONLY); 
+  
+//  sprintf(InfoText, " WR_Main %d RD_Main %d WR Timo % d RD_Timo %d \r\n",
+//    PState->fd.WR_MainPipe, PState->fd.RD_MainPipe, PState->fd.WR_TimoPipe, PState->fd.RD_TimoPipe );
+//  LOG_MSG(InfoText);
+ //  LOG_MSG("Pipes initiated\n\r"); 
+
   
   // Define which processes to use, several options! You need to include correct file also!
 
-  ret= pthread_create( &PState->Thread.Timeout,  NULL, (void *) TimeoutHandler,  (void *) ProcessorType);
+  ret= pthread_create( &PState->Thread.Timeout,  NULL, (void *) TimeoutHandler,  (void *) PState);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Timout thread", strerror(errno)); 
   errno = 0;
+//  sprintf(InfoText, "Initiated process Timeouthandler: %x..\n\r", &PState->Thread.Timeout);
+//  LOG_MSG(InfoText); sleep(2);
+
  // Not used as LCD buttons works well 20160212 
  // ret = pthread_create( &PState->Thread.Button,      NULL, (void *) RdButton, (void *) ProcessorType);
  // if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Button thread", strerror(errno)); 
  // errno = 0;
-  
-  ret = pthread_create( &PState->Thread.Kbd,      NULL, (void *) RdKeyboard, (void *) ProcessorType);
-  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Kbd thread", strerror(errno)); 
-  errno = 0;
+ 
+ // Not used, LCD buttons used instead-perhaps useful when debugging! 
+ // ret = pthread_create( &PState->Thread.Kbd,      NULL, (void *) RdKeyboard, (void *) ProcessorType);
+ // if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Kbd thread", strerror(errno)); 
+ // errno = 0;
 
-  ret = pthread_create( &PState->Thread.OneWire,  NULL, (void *) OneWireHandler,  (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.OneWire,  NULL, (void *) OneWireHandler,  (void *) PState);
   if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "OneWire thread", strerror(errno)); 
   errno = 0;
+//  sprintf(InfoText, "Initiated process: Onewire: %x..\n\r", &PState->Thread.OneWire); 
+//  LOG_MSG(InfoText); sleep(8);
 
-  ret = pthread_create( &PState->Thread.WDog,     NULL, (void *) Watchdog,        (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.WDog,     NULL, (void *) Watchdog,        (void *) PState);
   if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Watchdog thread", strerror(errno)); 
   errno = 0;
+//  sprintf(InfoText, "Initiated process: Watchdog: %x..\n\r", &PState->Thread.WDog);
+//  LOG_MSG(InfoText); sleep(8);
 
-	ret = pthread_create( &PState->Thread.SockServ,     NULL, (void *) SockServer,        (void *) ProcessorType);
-  if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Socket server", strerror(errno)); 
-  errno = 0;
+  //Not used, sockets not used right now. Add if needed
+	//ret = pthread_create( &PState->Thread.SockServ,     NULL, (void *) SockServer,        (void *) ProcessorType);
+  //if (ret != 0)  printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Socket server", strerror(errno)); 
+  //errno = 0;
 
-  ret = pthread_create( &PState->Thread.LCDKbd,      NULL, (void *) RdLCDButtons, (void *) ProcessorType);
+  ret = pthread_create( &PState->Thread.LCDKbd,      NULL, (void *) RdLCDButtons, (void *) PState);
   if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "LCD Buttons thread", strerror(errno)); 
   errno = 0;
+  //LOG_MSG("Initiate process: LCD & Kbd..\n\r"); sleep(8);
 
   
-  //sleep(2); // Wait until all threads are ready, i.e have opened all resources
+  ret = pthread_create( &PState->Thread.ByteportHandler,      NULL, (void *) BPHandler, (void *) PState);
+  if (ret != 0) printf("%s %d %s open error %s\n", __FILE__, __LINE__, "Byteport handler thread", strerror(errno)); 
+  errno = 0;
+  //LOG_MSG("Initiate process: Byteporthandler..\n\r"); 
+ 
+  //sleep(8); // Wait until all threads are ready, i.e have opened all resources
+ 
   
-  OPEN_PIPE(PState->fd.timo, TIMO_PIPE, O_WRONLY);
-  OPEN_PIPE(PState->fd.sens, ONEWIRE_PIPE, O_WRONLY);
-
 }
-void   QuitProc(void) { // Read current timestamp
+void   SignalCallbackHandler(int SigNum) { // Handle signals (normally errorhandling) from operating system
+  void *array[10];
+  size_t size;
+  char **strings;
+  size_t i;
+
+  // Log backtrace of execution to easier find the error
+  size = backtrace (array, 10);
+  strings = (void *) backtrace_symbols (array, size);
+
+  printf ("Obtained %zd stack frames.\n", size);
+
+  for (i = 0; i < size; i++)
+     printf ("%s\n", strings[i]);
+
+  free (strings);
+
+ printf("ERROR: Caught signal %d \r\n", SigNum);
+
+ 
+
+ exit(SigNum);
+}
+
+
+void   QuitProc(void) { 
 
  printf("Ctrl-c received\n");
 #ifdef LCD_PRESENT
  close(ProcState.fd.lcd);
 #endif 
 // close(ProcState.fd.kbdKnob);
- close(ProcState.fd.kbdBut);
- close(ProcState.fd.timo);
- close(ProcState.fd.sens);
- close(ProcState.fd.ToOwn);
- close(ProcState.fd.own);
+
+ close(ProcState.fd.WR_kbdButPipe);
+ close(ProcState.fd.WR_TimoPipe);
+ close(ProcState.fd.WR_OWPipe);
+ close(ProcState.fd.WR_MainPipe);
+ close(ProcState.fd.RD_MainPipe);
  //pthread_cancel(ProcState.Thread.Timeout);
  //pthread_cancel(ProcState.Thread.Kbd);
  //pthread_cancel(ProcState.Thread.OneWire);

@@ -16,10 +16,14 @@
 #define DEV_DS18B20					0x28    // Temperature sensor
 #define DEV_LCD							0xFF    // LCD module
 
-#define JosefinShipID				"28.91A5C7000000"   // Select one 1Wire ID as the ID for that this must be JosefinShip (byteport reporting)
+#define JosefinShipID				"FF.EB0700000100"   // Select one 1Wire ID as the ID for that this must be JosefinShip (byteport reporting)
+// Indoor #define JosefinShipID				"FF.0A0900000100"   // Select one 1Wire ID as the ID for that this must be JosefinShip (byteport reporting)
+
 																								// otherwise, if not found, its JosefinSim
 
-#define OWFS_MP							"/mnt/1wire/"   // Mount point for OWFS filesystem
+#define OWFS_MP							"/mnt/1wire/"            // Mount point for OWFS filesystem
+//#define OWFS_MP							"/mnt/1wire/uncached/"   // Mount point for OWFS filesystem
+                                                       //, using uncached for faster response. But often problems with lost sensor then...
 
 // Definitions for 1W LCD
 #define LCD1								8
@@ -80,15 +84,15 @@ struct ExpOneWireList_s {
  
  
       {0, "T-ute ", 0x28,  "28.CDEBF6000000", 1},	// Inne, utegivare på ute-väggen    
-			{0, "T-ute ", 0x28,  "28.1ED0B7010000", 0},	// Inne
+	  {0, "T-ute ", 0x28,  "28.1ED0B7010000", 0},	// Inne
 			
       {0, "T-ute ", 0x28,  "45000000F7140A28", 0},  // Ute-givare båt    
       {0, "T-ute ", 0x28,  "28.0A14F7000000", 0},  // Ute-givare båt    
-			{0, "T-ute ", 0x28,  "80000000F7BAE628", 0},  // Inne på board		
-			{0, "T-ute ", 0x28,  "28.E7C415010000", 0},  // USB-OFS Inne, ny own pwrd
+	  {0, "T-ute ", 0x28,  "80000000F7BAE628", 0},  // Inne på board		
+	  {0, "T-ute ", 0x28,  "28.E7C415010000", 0},  // USB-OFS Inne, ny own pwrd
 
       {1, "T-box ", 0x10,  "36000800B62E2A10", 0},  // HA7S Båt-Box     
-			{1, "T-box ", 0x10,  "10.2A2EB6000800", 0},   // USB-OWFS Båt-Box
+	  {1, "T-box ", 0x10,  "10.2A2EB6000800", 0},   // USB-OWFS Båt-Box
       {1, "T-box ", 0x28,  "28.7EF3FE000000", 0},	 // Inne test, ny Own pwr
       {1, "T-box ", 0x28,  "28.99D3B7010000", 0},	 // Inne test, ny ej konverterad Power
       {1, "T-box ", 0x28,  "21000001B8098028", 0},	// Inne test		 
@@ -98,12 +102,11 @@ struct ExpOneWireList_s {
       {2, "T-kyl ", 0x28,  "28.91A5C7000000", 0},  // USB-OWFS Båt-kyl
       {2, "T-kyl ", 0x28,  "28.CD14B8010000", 1},  // Inne test USB-OWFS Båt-kyl, konverterad     
       {2, "T-kyl ", 0x28,  "19000000F6EBCD28", 0},	// Inne test   
-			{2, "T-kyl ", 0x10,  "370000003478A710", 0},	// Inne test	
-			{2, "T-kyl ", 0x28,  "28.5BE8C7000000", 0},	// Inne test
+	  {2, "T-kyl ", 0x10,  "370000003478A710", 0},	// Inne test	
 
       {3, "T-VV  ", 0x28,  "000001b8098028", 0},
       {3, "T-VV  ", 0x28,  "B4000001B7D01E28", 0}, // Inne
-			{3, "T-VV  ", 0x10,  "0F000800AAA2A410", 0}, // VV-Båt
+	  {3, "T-VV  ", 0x28,  "28.8009B8010000", 0}, // VV-Båt
 	/*   //{3, "Temp frys", 0x28, "000000f7140a28", 0},	
       {4, "AD Int   ", 0x20,  "00000009a97f20", 0}, // AD Battery 1 & 2
       {4, "AD Int   ", 0x20,  "00000009afba20", 0},
@@ -123,7 +126,7 @@ struct ExpOneWireList_s {
       {6, "T-hav ", 0x28,  "000000c7e85b28", 0}, // Tveksam funktion?
       {6, "T-hav ", 0x22,  "0000001aa55922", 0}, // Gammal givare, bytes
       {6, "T-hav ", 0x22,  "0000000017C69F22", 0}, // HA7S BÅt-Gammal givare, bytes
-      {6, "T-hav ", 0x22,  "22.9FC61700000", 0}, // USB-OWFS BÅt-Gammal givare, bytes
+      {6, "T-hav ", 0x22,  "22.9FC617000000", 0}, // USB-OWFS BÅt-Gammal givare, bytes
       {6, "T-hav ", 0x28,  "80000000f6ebcd28", 0}, // Inne
 			
       {7, "T-Vtn ", 0x28,  "80000000f6ebcd28", 0}, // Inne  

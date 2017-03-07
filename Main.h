@@ -7,14 +7,17 @@
  *************************************************************************/
 
 // Define devices, pipes etc.
-#define LCD 					  "/dev/lcd"
-#define KBD_PIPE			  "/tmp/kbdpipe"
-#define ONEWIRE_PIPE	  "/tmp/onewirepipe"
-#define MAIN_PIPE			  "/tmp/mainpipe"
-#define TIMO_PIPE			  "/tmp/timopipe"
-#define BYTEPORTFOLDER	"/tmp/byteport"
 
-#define LCDBlkOnTimerVal  60  // No of minutes before turning off inactive backlight
+
+#define LCD 					  "/dev/lcd"
+#define KBD_PIPE			  "/tmp/kbd.pipe"
+#define ONEWIRE_PIPE	  "/tmp/onewire.pipe"
+#define BYTEPHNDL_PIPE	"/tmp/bytephndl.pipe"
+#define MAIN_PIPE			  "/tmp/main.pipe"
+#define TIMO_PIPE			  "/tmp/timo.pipe"
+//#define BYTEPORTFOLDER	"/tmp/byteport.pipe"
+
+#define LCDBlkOnTimerVal  10  // No of minutes before turning off inactive backlight
 
 #define MAX_WATER_LEVEL		180
 #define MAX_DIESEL_LEVEL	280
@@ -50,7 +53,7 @@
 
 
 
-enum ProcTypes_e {BF533, BF537, RPI, BB, HOSTENV};
+enum ProcTypes_e {NONE, BF533, BF537, RPI, BB, HOSTENV};
 /* Declaration of types */
 
 //#define NO_OF_MODES (3)  /* Change this vaule so it is the same as no of enum types -1, see below! */
@@ -68,20 +71,56 @@ struct ConvList_s {
    float    Level;
    float    Amount;
 };
-
-
+// New version for replaced (Biltema) water sensor to Nimbus 3003 -1989
  static const struct ConvList_s Lvl2Water [] = {
-       /************************************************************
-        * Define AD level and corresponding Water amount [liters]  *
-        * Points (a1, b1), (a2, b2)...
-        * Y = K * X + m
-        * K = (b2 - b1) / (a2 - a1)
-        * m = b1 - K * a1
-        ************************************************************/
-       /*(a1, b1)
-        *(a2, b2)
-         Values at 13.00 V, see Excel sheet for measured values      */
-         {0,       0},     /* Min level & guard value */
+       //************************************************************
+       // * Define AD level and corresponding Water amount [liters]  
+       // * Points (a1, b1), (a2, b2)...
+       // * Y = K * X + m
+       // * K = (b2 - b1) / (a2 - a1)
+       // * m = b1 - K * a1
+       // ************************************************************
+       //(a1, b1)
+       //(a2, b2)
+       //  Values at 13.00 V, see Excel sheet for measured values      
+         {0,       0},     // Min level & guard value 
+         {0.16,   10},
+         {1.00,   20},  // Gissning från mig!
+         {1.82,   30},
+         {2.42,   40},
+         {3.30,   50},  
+         {3.41,   60},
+         {3.68,   70},
+         {4.02,   80},    // Visar 1/2 tank på mätaren
+         {4.28,   90},  
+         {4.50,  100},
+         {4.71,  110},
+         {4.84,  120},
+         {4.90,  130},  
+         {5.06,  140},    // Visar 3/4 tank på mätaren
+         {5.24,  150},
+         {5.25,  160},
+         {5.34,  170},
+         {5.47,  180},
+         {20.0,  180}      // Guard & Max value = Full tank  
+         };
+
+
+
+
+/* Old version for original watersensor to Nimbus 3003 -1989
+ static const struct ConvList_s Lvl2Water [] = {
+       //************************************************************
+       // * Define AD level and corresponding Water amount [liters]  
+       // * Points (a1, b1), (a2, b2)...
+       // * Y = K * X + m
+       // * K = (b2 - b1) / (a2 - a1)
+       // * m = b1 - K * a1
+       // ************************************************************
+       //(a1, b1)
+       //(a2, b2)
+       //  Values at 13.00 V, see Excel sheet for measured values      
+         {0,       0},     // Min level & guard value 
          {1.43,    0},
          {1.88,   13},
          {2.55,   23},
@@ -101,10 +140,11 @@ struct ConvList_s {
          {7.48,  163},
          {7.51,  173},
          {7.59,  180},
-         {20.0,  180}      /* Guard & Max value = Full tank  */
+         {20.0,  180}      // Guard & Max value = Full tank  
          };
 
 
+ */
 #define NO_OF_ITEMS_IN_W_CONV_LIST ((sizeof(Lvl2Water)/sizeof(Lvl2Water[0])))
 
 static const struct ConvList_s Lvl2Diesel [] = {
@@ -146,6 +186,7 @@ static const struct ConvList_s Lvl2Diesel [] = {
 
 
 struct ProcState_s {
+  enum ProcTypes_e ProcType;
 	enum ModeState_e ModeState;	
 	enum ServModes_e ServMode;
   float         MinOutTemp;
@@ -182,12 +223,18 @@ struct ProcState_s {
   char					DeviceName[16]; // The name is defined in OneWireHandlerOWFSFile.c. The name to use for Byteport reporting 
  struct fd_s {  // Filedescriptors
     int           lcd;
-    int           timo;
-    int           sens;
-    int           own;
-    int           ToOwn;
-    int           kbdKnob;
-    int           kbdBut;
+    int           WR_TimoPipe;
+    int           RD_TimoPipe;
+    int           WR_OWPipe;
+    int           RD_OWPipe;
+    int           WR_BPRepPipe;
+    int           RD_BPRepPipe;
+    int           WR_MainPipe;
+    int           RD_MainPipe;
+    int           WR_kbdKnobPipe;
+    int           RD_kbdKnobPipe;
+    int           WR_kbdButPipe;
+    int           RD_kbdButPipe;    
 		FILE				  *OutTemp;
 		FILE					*RefrigTemp;
 		FILE					*BoxTemp;
@@ -208,6 +255,7 @@ struct ProcState_s {
     pthread_t     Timeout;
     pthread_t     WDog;
     pthread_t     SockServ;
+    pthread_t     ByteportHandler;
   } Thread; 
 
 };

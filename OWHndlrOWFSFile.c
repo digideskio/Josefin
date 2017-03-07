@@ -1,3 +1,4 @@
+
 /*************************************************************************
  *      OneWireHandler.c
  *
@@ -30,7 +31,7 @@
 char 	          LCD1W_Write(int LCD_Id, int Line, char *Msg);
 char 	          Scan4Sensors(void);
 float	          CalculateMeanValue(int SensorId, float Temp);
-char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
+//char						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
 char						ReadADALL(float *AD, int Factor, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPAdHex);
 char						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex);
 int 						A2HexByte(char A1, char A2);
@@ -47,7 +48,7 @@ char    		InfoText[300];  // Store info text, Devpath may be long...!
 long long 	RT, TM1, TM2, StartCycles, EndCycles;
 float				DeltaTime;
 
-void  				* OneWireHandler(enum ProcTypes_e ProcType) {
+void  				* OneWireHandler(struct ProcState_s *PState) {
   FILE            	*fp;
   int          	   	fd_Client, fd_2own, fd_own, fd_2main, fd_timo;
   unsigned char			Buf[sizeof(union SIGNAL)];
@@ -73,25 +74,31 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
     OneWireList[Idx].Val[3]  = -99; //SENS_DEF_VALUE;  // Set default value
 
 	}
-
-
   Scan4Sensors();
-//	if (OneWireList[8].Present)  // Init 1W LCD if present
-//	  Init1WLCD(8);
-		
-
-  OPEN_PIPE(fd_own,    ONEWIRE_PIPE, O_RDONLY|O_NONBLOCK);
-  OPEN_PIPE(fd_2own,   ONEWIRE_PIPE, O_WRONLY);
-  OPEN_PIPE(fd_2main,  MAIN_PIPE,    O_WRONLY);
-  OPEN_PIPE(fd_timo,   TIMO_PIPE,    O_WRONLY);
+// Setup all Signal pipes for communication
+  fd_own   = PState->fd.RD_OWPipe;
+  fd_2own  = PState->fd.WR_OWPipe;
+  fd_2main = PState->fd.WR_MainPipe;
+  fd_timo  = PState->fd.WR_TimoPipe;
+  //sprintf (InfoText, " Own %d ToOwn %d Main %d Timo %d \r\n", fd_own, fd_2own, fd_2main, fd_timo);
+  //LOG_MSG(InfoText);
+  
+  
+ // OPEN_PIPE(fd_own,    ONEWIRE_PIPE, O_RDONLY|O_NONBLOCK);
+ // OPEN_PIPE(fd_2own,   ONEWIRE_PIPE, O_WRONLY);
+ // OPEN_PIPE(fd_2main,  MAIN_PIPE,    O_WRONLY);
+ // OPEN_PIPE(fd_timo,   TIMO_PIPE,    O_WRONLY);
 //  REQ_TIMEOUT(fd_timo, fd_2own, "OneWire", SIGInitMeasAD, 2 Sec); 
 //  REQ_TIMEOUT(fd_timo, fd_2own, "OneWire", SIGInitMeasTemp, 2 Sec); 
   REQ_TIMEOUT(fd_timo, fd_2own, "OneWire", SIGCheckNewSensors, 5 Sec); 
   LOG_MSG("Started\n");
+
 	while(TRUE) {
 	  WAIT(fd_own, Buf, sizeof(union SIGNAL));
-		Msg = (void *) Buf;
+  	Msg = (void *) Buf;
 		fp = NULL;
+//		sprintf(InfoText, "Rec Sig: %d \n", Msg->SigNo );
+//   LOG_MSG(InfoText); //sleep(1);
     switch(Msg->SigNo) {
      	case SIGReadSensorReq:
      	case SIGReadADReq:
@@ -116,7 +123,7 @@ void  				* OneWireHandler(enum ProcTypes_e ProcType) {
                 LOG_MSG(InfoText);
 		 				  }  
            /*   READ_TIMER(TM2);  */
-							DELTA_TIME(DeltaTime, TM2, TM1);
+						//	DELTA_TIME(DeltaTime, TM2, TM1);
             	OneWireList[Id].Val[0] = CurTemp; 
             break;
 
@@ -316,8 +323,8 @@ char 						Scan4Sensors(void) {
 				LOG_MSG(InfoText);
 // Check if we have the master OWFS device attached == This is "JosefinShip"!
 				if (!strncmp(OneWireList[Id].Path, JosefinShipID, sizeof(JosefinShipID))) { // Check if we have master ID connected
-				  strncpy(ProcState.DeviceName, "JosefinShip" , 11);
-					sprintf(InfoText, "Defined %s f\n", ProcState.DeviceName);
+				  sprintf(ProcState.DeviceName,"%s", "JosefinShip");
+					sprintf(InfoText, "Defined %s \r\n", ProcState.DeviceName);
 					LOG_MSG(InfoText);		
 				} 
 
@@ -345,14 +352,14 @@ char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, ch
   char	        	*Str, Address[300], TempLine[300], line[300], ADline[4][20];
   float						templong; 
 	
-  
+ 
  // Set default values
 	Status = FALSE;
 	ADReadIdx = 6;  // Set number of re-tries at AD read out
   for (idx = 0; idx < 4; idx++)
     AD[idx] = SENS_DEF_VAL;
   // We should use uncached here to get fastest possible response!
-  //sprintf(Address, "%s%s%s%s", OWFS_MP, "uncached/", SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
+   //sprintf(Address, "%s%s%s%s", OWFS_MP, "uncached/", SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
    sprintf(Address, "%s%s%s", OWFS_MP, SensorPath, "/volt.ALL");  //Note, change to "volt2." for 2.55 V conversion
 
  // printf ("AD Fact: %3.2f %s\r\n", ConvLevelAD, SensorPath);
@@ -385,7 +392,7 @@ char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, ch
         idx = 0;
         ADidx = 0;
         ADno =0;
-        for (idx = 0; idx < strlen(line); idx++) {
+        for (idx = 0; idx < (int) strlen(line); idx++) {
           //printf(" %d : %c\r\n", idx, line[idx]);
           if (line[idx] == ',') {
             ADline[ADno] [ADidx] = '\0';
@@ -433,9 +440,8 @@ char			ReadADALL(float *AD, int ConvLevelAD, FILE *fp, unsigned char DevType, ch
 	}
 	return Status;
 }
-	
-	
-
+		
+/*
 char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
   int 						idx;
   char						Status;
@@ -515,7 +521,7 @@ char 						ReadAD(float *AD, FILE *fp, unsigned char DevType, char *SensorPath, 
 	}
 	
 } 	
-
+*/
 char 						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPath, char *ScrPadHex) {
    //char             InfoText[100];
 	 int 							idx;
@@ -530,6 +536,7 @@ char 						ReadTemp(float *Temp, FILE *fp, unsigned char DevType, char *SensorPa
   *Temp = SENS_DEF_VAL; // Default, indicates error!
  
 	sprintf(Addr, "%s%s%s", OWFS_MP, SensorPath, "/temperature");
+  //sprintf(Addr, "%s%s%s%s", OWFS_MP, "uncached/", SensorPath, "/temperature"); // Uncached version
 	
   if((fp = fopen(Addr, "r")) == NULL)  {
     /* No file to read */

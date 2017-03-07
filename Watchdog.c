@@ -26,8 +26,8 @@
 //#include "TimeoutHandler.h"
 #include "Main.h"
 
-void * Watchdog(enum ProcTypes_e ProcType) {
-int fd_led;
+void * Watchdog(struct ProcState_s *PState) {
+int fd_led=0;
 
 #ifdef RPI_DEFINED
 #define LED_OK "/sys/class/leds/led0/brightness" 

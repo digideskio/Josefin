@@ -6,12 +6,6 @@
  *
  *************************************************************************/
 
-
-
-
-
-
-
 // Define allowed device types, add new and change in code...
 #define DEV_NO_DEV					0x00    // No sensor defined
 #define DEV_DS1820         	0x10		// Temperature sensor, old model
@@ -87,6 +81,8 @@ struct ExpOneWireList_s {
       {5, "AD Ext", 0x20,  "/sys/devices/w1_bus_master2/20-000000094c94/voltages"}, // 
       {5, "AD Ext", 0x20,  "/sys/devices/w1_bus_master1/20-000000065491/voltages"},
       {5, "AD Ext", 0x20,  "/sys/devices/w1_bus_master2/20-000000065491/voltages"},
+      {5, "AD Ext", 0x20,  "/sys/devices/w1_bus_master1/20-CF3714000000/voltages"},  // Inne, ny
+      {5, "AD Ext", 0x20,  "/sys/devices/w1_bus_master2/20-CF3714000000/voltages"},  // Inne, ny
 
 //    {2, "Temp kort" ,0x28,  "/sys/devices/w1_bus_master3/28-000000f7bae6/w1_slave"},
 //    {2, "Temp kort", 0x28,  "/sys/devices/w1_bus_master3/28-000000fef37e/w1_slave"},

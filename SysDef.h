@@ -20,7 +20,12 @@
 #define PROCESS	             int  // Process or fd for pipe...
 #define SIGSELECT            int
 
- // Define a struct with ALL signal/structs used in the application    
+ // Define a struct with ALL signal/structs used in the application 
+struct	ByteportReport_s {  // Anchor command (Up, Dwn etc)
+  SIGSELECT 						SigNo;
+  char                  Str[200];  // Actual message to send to Byteport
+};
+ 
 struct	ServCmdReq_s {  // Anchor command (Up, Dwn etc)
   SIGSELECT 						SigNo;
   enum ServModes_e      Cmd;
@@ -100,6 +105,7 @@ struct	TempR_s {
 
     union SIGNAL {
       SIGSELECT					  		    SigNo;
+      struct ByteportReport_s     ByteportReport;
 			struct ServCmdReq_s		    	ServCmdReq;
       struct ReadSensorReq_s      SensorReq;
       struct ReadSensorResp_s     SensorResp;
@@ -111,7 +117,7 @@ struct	TempR_s {
      // struct ADR_s 					  ADR;
       struct KbdIO_s	    		     KbdIO; 
       struct Timeout_s	           Timo;
-			char												 Data[20]; // For debugging..
+			char												 Data[120]; // For debugging..
     };
 
 // Debug tools!!!!
@@ -193,8 +199,13 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
 #define  START_PROC(a,b,c,d)  {CHECK((pthread_create(a,b,c,d) != 0), "Unable to start %d");}
 
 // a = filedescriptor, b = Message
-#define   WAIT(a, b, c)        {while(read(a, b , c) != c) {  \
+#define   tWAIT(a, b, c)        {select(c) \
 /*printf(".");*/\
+                               }	
+
+
+
+#define   WAIT(a, b, c)        {while(read(a, b , c)!= (int) c) {  \
                                  usleep(WTIME);\
 															  } \
                                }	
@@ -205,7 +216,10 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
                                  b = NULL;\
                                  mutex.Unlock();
 																 														
-#define   SEND(a,b, c)          {CHECK(write(a, b, c) == c, "SEND error\n");  usleep(50000);}		
+#define   SEND(a,b, c)          if (a > 0) {CHECK(write(a, b, c) == c, "SEND error \r\n");}\
+                                 else \
+                                  printf("Err fd: %d %s : %s %s open %d %s\n", a, now(), __FILE__, __LINE__, b, " Not valid process to send to");                                 
+                                //  usleep(50000);}		
 // Since I added Curl (Byteport) I have had problems with Illegal Signals received, probably due to 
 // some memory over write/timing problems. After adding the small usleep it works again.														
 
@@ -246,5 +260,15 @@ struct ProcState_s  ProcState; // Write only Main.c, read all
 #define  SIGInitMeasTempHW      (48)  // Initiate measurments from Temperature sensors
 #define  SIGServCmdReq	        (49)  // Server command
 #define  SIGMinuteTick	        (50)  // Minute tick counter, for backlight off.
-#define  SIGByteportReportTick	(51)  // Send report to Byteport timer
+#define  SIGInitByteportReport	(51)  // Send report to Byteport
+#define  SIGSecondTick	        (52)  // Second tick, for process LCDT.
+
+// ByteportHandler
+#define  SIGByteportInit 	      (60)  // Init Byteport.
+#define  SIGByteportReport	    (61)  // Report to Byteport.
+#define  SIGByteportSrv    	    (62)  // Server cmd to ByteportHandler.
+
+
+
+
     

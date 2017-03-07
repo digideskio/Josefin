@@ -1,1 +1,109 @@
-/bin/sh: 1: /home/pi/Josefin/StartApplication.sh: not found
+Thu 16/02/17 19:17:04 Starting Josefin script
+Thu 16/02/17 19:17:04 Starting Byteport reporting
+Thu 16/02/17 19:17:04 Josefin script started
+Thu 16/02/17 19:17:04 Starting Tightvnc
+20170216 19:17:06 : LOG Main.c 956 RaspberryPi defined
+20170216 19:17:06 : LOG TimHndlr.c 55 Started
+20170216 19:17:06 : LOG Watchdog.c 42 Started
+2017-02-16 19:17:06.296 tcp.c:55	gethostbyname
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:178	transport->_connect(transport->ctx)
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:261	mqtt_connect( m )
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:314	byteport_mqtt_cmd_store_begin( bp, &buf, ts )
+	Returned negative error -0x1 (-1)
+
+
+New 'X' desktop is Pi2:1
+
+Starting applications specified in /home/pi/.vnc/xstartup
+Log file is /home/pi/.vnc/Pi2:1.log
+
+Thu 16/02/17 19:17:08 Tightvnc started
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:210	Condition not met: mqtt_is_connected(mqtt)
+	Service called while connection is closed
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:579	mqtt_service( &bp->mqtt, readset )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:288	20170216 19:17:11 Warning during service: -1 BP_ERR_GENERAL_ERROR
+20170216 19:17:06 : LOG OWHndlrOWFSFile.c 94 Started
+ByteportHandler.c:352	Connecting to mqtt server...
+2017-02-16 19:17:11.301 tcp.c:55	gethostbyname
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:178	transport->_connect(transport->ctx)
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:261	mqtt_connect( m )
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:314	byteport_mqtt_cmd_store_begin( bp, &buf, ts )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:355	Failed to connect: -1 BP_ERR_GENERAL_ERROR
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:210	Condition not met: mqtt_is_connected(mqtt)
+	Service called while connection is closed
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:579	mqtt_service( &bp->mqtt, readset )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:288	20170216 19:17:16 Warning during service: -1 BP_ERR_GENERAL_ERROR
+ByteportHandler.c:352	Connecting to mqtt server...
+ 20170216 19:18:05 : LOG OWHndlrOWFSFile.c 323 Fnd[0] T-ute :28.CDEBF6000000 Fct:1f Pwr: 1
+20170216 19:18:05 : LOG OWHndlrOWFSFile.c 323 Fnd[1] T-box :28.99D3B7010000 Fct:0f Pwr: 0
+20170216 19:18:05 : LOG OWHndlrOWFSFile.c 323 Fnd[5] AD Ext:20.CF3714000000 Fct:5f Pwr: 0
+20170216 19:18:06 : LOG OWHndlrOWFSFile.c 323 Fnd[8] LCD-1 :FF.750800000100 Fct:0f Pwr: 0
+20170216 19:18:06 : LOG OWHndlrOWFSFile.c 337 LCD-1  initiated
+20170216 19:18:06 : LOG KeyboardButLCD.c 130 LCD Buttons Started
+20170216 19:18:06 : LOG Main.c 230 JosefinSim started Ver:  Jan 10 2017
+20170216 19:18:06 : LOG ByteportHandler.c 309  Started
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:576	Condition not met: elapsed_ms < bp->cmd_timeout_ms
+	Timeout: BP_CMD_STORE, elapsed: 10000 ms
+ByteportHandler.c:288	20170227 01:52:04 Warning during service: -10 BP_ERR_TIMEOUT
+ByteportHandler.c:352	Connecting to mqtt server...
+2017-02-27 01:54:11.751 tcp.c:69	connect
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:178	transport->_connect(transport->ctx)
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:261	mqtt_connect( m )
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:314	byteport_mqtt_cmd_store_begin( bp, &buf, ts )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:355	Failed to connect: -1 BP_ERR_GENERAL_ERROR
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:210	Condition not met: mqtt_is_connected(mqtt)
+	Service called while connection is closed
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:579	mqtt_service( &bp->mqtt, readset )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:288	20170227 01:54:11 Warning during service: -1 BP_ERR_GENERAL_ERROR
+2017-02-27 01:56:19.111 tcp.c:69	connect
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:178	transport->_connect(transport->ctx)
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:261	mqtt_connect( m )
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:339	byteport_mqtt_cmd_store_begin( bp, &buf, ts )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:322	 20170227 01:56:19 Error sending timestamp: -1 BP_ERR_GENERAL_ERROR
+ByteportHandler.c:352	Connecting to mqtt server...
+2017-02-27 01:56:22.158 tcp.c:69	connect
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:178	transport->_connect(transport->ctx)
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:261	mqtt_connect( m )
+	Returned negative error -0x1 (-1)
+
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:314	byteport_mqtt_cmd_store_begin( bp, &buf, ts )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:355	Failed to connect: -1 BP_ERR_GENERAL_ERROR
+/home/pi/libbyteport/src/byteport/modules/src/mqtt.c:210	Condition not met: mqtt_is_connected(mqtt)
+	Service called while connection is closed
+/home/pi/libbyteport/src/byteport/modules/src/byteport_mqtt.c:579	mqtt_service( &bp->mqtt, readset )
+	Returned negative error -0x1 (-1)
+
+ByteportHandler.c:288	20170227 01:56:22 Warning during service: -1 BP_ERR_GENERAL_ERROR
+ 

@@ -35,12 +35,13 @@
 // All these started by Main.c (bottom of the file...)
 
 // Reads keyboard input, mainly for debugging
-void * RdKeyboard(enum ProcTypes_e ProcType) {
+void * RdKeyboard(struct ProcState_s *Pstate) {
   int 	fd_main, ret;
   static unsigned char  Buf[sizeof(union SIGNAL)]; // Static due to must be placed in global memory (not stack) otherwise we get OS dump Misaligned data!!!
   union SIGNAL             *Msg;
 
-  OPEN_PIPE(fd_main, MAIN_PIPE, O_WRONLY);
+  fd_main = Pstate->fd.WR_MainPipe;
+ // OPEN_PIPE(fd_main, MAIN_PIPE, O_WRONLY);
   LOG_MSG("Kbd Started\n");
   while(TRUE) {
 		//Idx++;
@@ -91,7 +92,7 @@ void * RdKeyboard(enum ProcTypes_e ProcType) {
 	  exit(0);
 }; 
 
-void * RdLCDButtons(enum ProcTypes_e ProcType) { // Read LCD Buttons
+void * RdLCDButtons(struct ProcState_s *PState) { // Read LCD Buttons
 // We use the Display board for this. Each "click" on a button generates an increase of 2.
 // So there is a logic for checking that we actually got an increase of 2 and that the button was released 
 // before next "click"
@@ -107,11 +108,13 @@ void * RdLCDButtons(enum ProcTypes_e ProcType) { // Read LCD Buttons
   RgtOn = FALSE;
   OpNo = 0; RgtNo = 0;  
 
-  OPEN_PIPE(fd_main, MAIN_PIPE, O_WRONLY);
+  fd_main = PState->fd.WR_MainPipe;
+  //sprintf (InfoText, " Main %d  \r\n", fd_main);
+  //LOG_MSG(InfoText);
   
   // Now we must wait for the LCD to be initiated...
   idx = 0;
-  while (ProcState.LCD_Id == 0) {
+  while (!ProcState.DevLCDDefined) {
     usleep(200000);
     idx++;
     if (idx >= 1000) {
@@ -123,6 +126,7 @@ void * RdLCDButtons(enum ProcTypes_e ProcType) { // Read LCD Buttons
 // We must use the uncached reading to avoid delays
   sprintf(Addr, "%s%s%s%s", OWFS_MP, "uncached/", OneWireList[ProcState.LCD_Id].Path, "/cumulative.ALL"); 
  // printf("Open: %d %s Addr: %s \r\n", ProcState.LCD_Id, OneWireList[ProcState.LCD_Id].Path, Addr);  
+ //sleep(10);
   LOG_MSG("LCD Buttons Started\n");
   
   while(TRUE) {
@@ -140,7 +144,7 @@ void * RdLCDButtons(enum ProcTypes_e ProcType) { // Read LCD Buttons
       // Read Op string-button
       while( ( OpStr[idx++] = fgetc(fp) ) != ',') {} //{if (DebugOn == 1) printf("%c", OpStr[idx-1]);usleep(2000);}
       OpNo = atoi(OpStr);
-     // printf("Op: %d OpStr: %s \n\r", OpNo, OpStr);
+      // printf("Op: %d OpStr: %s \n\r", OpNo, OpStr);
       idx = 0;
       // Read Right string-button
       while( ( RgtStr[idx++] = fgetc(fp) ) != ',') {} // {if (DebugOn == 1) printf("%c", RgtStr[idx-1]); usleep(2000);} 
@@ -157,7 +161,7 @@ void * RdLCDButtons(enum ProcTypes_e ProcType) { // Read LCD Buttons
           OpNoOld = OpNo;
           Msg->SigNo = SIGOpButOn;// Send signal	
  		  	  SEND(fd_main, Msg, sizeof(union SIGNAL));
-          //printf("%d: OP LCD Buttons\r\n", OpNo);
+         // printf("%d: OP LCD Buttons\r\n", OpNo);
 	      } else { 
           OpOn = FALSE;
         }
@@ -166,7 +170,7 @@ void * RdLCDButtons(enum ProcTypes_e ProcType) { // Read LCD Buttons
           RgtNoOld = RgtNo;
   	      Msg->SigNo = SIGRghtButOn;// Send signal	
    		    SEND(fd_main, Msg, sizeof(union SIGNAL));
-         // printf("%d: Rgt LCD Buttons\r\n", RgtNo);
+          //printf("%d: Rgt LCD Buttons\r\n", RgtNo);
         } else {
           RgtOn = FALSE;
         } // else

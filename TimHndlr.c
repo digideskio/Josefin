@@ -25,7 +25,7 @@
 #define TICK_TIME			100000  // usec between each TICK
 // Global variables
     
-char  InfoText[100];  // To report messages
+char  InfoText[300];  // To report messages
     
 struct TimoRec_s {
   void               *Buff_p;
@@ -42,21 +42,24 @@ void Tick(unsigned int DeltaTime);
 void LinkTimoRec(struct  TimoRec_s  *TimoRec_p);
 char ChkTimoList(struct  TimoRec_s  *List_p);
 
-void * TimeoutHandler(enum ProcTypes_e ProcType) {
-	int 								no, fd_own;
+void * TimeoutHandler(struct ProcState_s *PState) {
+	int 								no, fd_Own;
   unsigned char       Buf[sizeof(union SIGNAL)];
 	union SIGNAL				*Msg;
   struct TimoRec_s		*TimoRec_p;
   
   setpriority(PRIO_PROCESS, 0, -20);
-  OPEN_PIPE(fd_own, TIMO_PIPE, O_RDONLY|O_NONBLOCK);
+  fd_Own = PState->fd.RD_TimoPipe;
+  //sprintf (InfoText, " Own %d\r\n", fd_Own);
+  //LOG_MSG(InfoText);  
 	LOG_MSG("Started\n");
 
 	while(TRUE) {
-    while (read(fd_own, Buf, sizeof(union SIGNAL)) != sizeof(union SIGNAL)) {
+    while (read(fd_Own, Buf, sizeof(union SIGNAL)) != sizeof(union SIGNAL)) {
       Tick(TICK_TIME);  // Tick clock and check for timeouts
 			if (ChkTimoList(TimoList_p) > 20) {			
 				sprintf(InfoText, "No of timeouts now HIGH \r\n");
+        LOG_MSG(InfoText); sleep(1);
 			}
       usleep(TICK_TIME);
     };
@@ -71,8 +74,8 @@ void * TimeoutHandler(enum ProcTypes_e ProcType) {
         strcpy(TimoRec_p->ClientName, Msg->Timo.ClientName);
         TimoRec_p->Next_p = NULL;
         TimoRec_p->Buff_p = NULL;
-// sprintf(InfoText, "Timo Req: Client: %s Id: %d Time:  %d\n",  TimoRec_p->ClientName, Msg->Timo.Client_fd, TimoRec_p->DeltaTime);
-// LOG_MSG(InfoText);
+ //sprintf(InfoText, "Timo Req: Client: %s Id: %d Time:  %d\n",  TimoRec_p->ClientName, Msg->Timo.Client_fd, TimoRec_p->DeltaTime);
+ //LOG_MSG(InfoText);
         LinkTimoRec(TimoRec_p);
 			break;
 
@@ -81,11 +84,7 @@ void * TimeoutHandler(enum ProcTypes_e ProcType) {
 				CHECK(FALSE, InfoText);
 				break;
     } // switch
-
 	} // while (TRUE)
-
-
-
 };
 
 /* void     usleep(WTIME);

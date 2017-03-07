@@ -2,12 +2,13 @@
 # Modified to also include BeagleBone, Aachen 20140214
   
 EXEC = Josefin
-OBJS-RPI = Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
+OBJS-RPI = Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c ByteportHandler.c
 OBJS-BB = SimpleGPIO.c Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
 OBJS-HOST = SimpleGPIO.c Main.c KeyboardButLCD.c OWHndlrOWFSFile.c TimHndlr.c Watchdog.c crcutil.c SysDef.c SockSrv.c
 #OBJS = Main.o KeyboardBut.o OneWireHandlerHA7S.o TimeoutHandler.o Watchdog.o crcutil.o SysDef.c SocketServer.c
 LDLIBS += -lpthread # Support library for pthreads
 LDLIBS += -lcurl # Support library for curl
+#LDLIBS += -llibbyteport # Support library for libbyteport
 HOME = /home/$(USER)
   
 # Settings for stand-alone build(not from top directory)
@@ -17,17 +18,23 @@ ifndef UCLINUX_BUILD_USER
 
 	WIRINGPILIB = /usr/local/include
 #	CFLAGS = -g -Wall	# -W all warnings, -g for debugging
-	
 endif
+export PKG_CONFIG_LIBDIR=/home/pi/Josefin/libbyteport/staging/lib/pkg-config
+CFLAGS-RPI+=$(shell pkg-config --cflags byteport)
+LDFLAGS-RPI+=$(shell pkg-config --libs byteport)
+
+
 #LDFLAGS-RPI = -Wl -v
 
 #LDFLAGS-BB = -W1 -v
 #LDFLAGS-HOST = -W1 -v
-LDFLAGS-RPI	= -L/usr/local/lib
+LDFLAGS-RPI	+= -L/usr/local/lib
+
 #define LCD present or not
 CFLAGS-RPI += -DLCD_PRESENT
 CFLAGS-RPI += -DRPI_DEFINED
 CFLAGS-RPI += -DOWLCD_PRESENT
+CFLAGS-RPI += -g -W	# -W all warnings, -g for debugging
 
 CFLAGS-BB = -g -W	# -W all warnings, -g for debugging
 CFLAGS-BB += -DLCD_PRESENT
@@ -47,6 +54,10 @@ CFLAGS-RPI += -I$(WIRINGPILIB)
 #LDLIBS-RPI += -lwiringPi
 LDLIBS-RPI += -lcurl
 LDLIBS-RPI += -lpthread # Support library for pthreads
+LDLIBS-RPI += -lbyteport # Support library 
+LDLIBS-RPI += -lMQTTPacket # Support library 
+LDLIBS-RPI += -lnanopb # Support library 
+
 #$(EXEC): $(OBJS)
 #$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS$(LDLIBS_$@))
 #  echo Default Compiled
