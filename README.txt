@@ -1,4 +1,13 @@
-Instruktioner
+
+Basic Git commands
+git add *
+git commit -m "message"
+git commit -add
+git push (user + password)
+
+
+
+Instruktioner för att skapa system
 cd /home
 Sätt chown -R root *
 
