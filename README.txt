@@ -1,8 +1,8 @@
 
 Basic Git commands
 git add *
-git commit -m "message"
-git commit -add
+git commit -a -m "message"
+
 git push (user + password)
 
 
